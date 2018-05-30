@@ -6,7 +6,7 @@ global counter
 counter = 0
 class dawg_node():
 	"""docstring for ClassName"""
-	def __init__(self, isEOF=False, isSOF=False):
+	def __init__(self, isEOF=False):
 		self._paths = {}
 		self._followers = [False] * 27
 		self._parents = []
@@ -19,6 +19,8 @@ class dawg_node():
 			self.size_counter = 1
 			self._root = self
 			self._all_nodes = []
+			def remove_dupes(self):
+
 			# self._words_count_found = []
 
 		self._num_words_test_counter = 0
@@ -49,6 +51,7 @@ class dawg_node():
 
 	def count_found(self, word):
 		self._root.append(word)
+
 
 
 	def count_words(self, parentStr = ""):
@@ -151,15 +154,12 @@ class dawg_node():
 		return result
 
 
-def testcases(expected, fn):
-	pass
-	# results = fn()
-
-
-	# if(results[0]):
-
-def starter_dawg_node():
+class starter_dawg_node(dawg_node):
+	def __init__(self):
 	return dawg_node(False, True)
+
+
+
 
 
 def testOutcome(expected, actual):
