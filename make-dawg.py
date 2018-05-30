@@ -5,21 +5,17 @@ global counter
 
 counter = 0
 class dawg_node():
-	"""docstring for ClassName"""
-	def __init__(self, isEOF=False):
+	""" Node of a Directed-Acrylic Word Graph, to be used for Scrabble AI"""
+	def __init__(self, root, isEOF=False):
 		self._paths = {}
 		self._followers = [False] * 27
 		self._parents = []
 		self.SOF = isSOF
-		self._root = None
+		self._root = root
 
 		self._ind = 0
 		
-		if(isSOF):
-			self.size_counter = 1
-			self._root = self
-			self._all_nodes = []
-			def remove_dupes(self):
+			
 
 			# self._words_count_found = []
 
@@ -44,7 +40,7 @@ class dawg_node():
 
 	def add_node(self, letter):
 		#Adds a new node where needed
-		self._paths[letter]=dawg_node()
+		self._paths[letter]=dawg_node(self._root)
 
 	def increment_counter(self):
 		self._root.size_counter += 1
@@ -71,18 +67,18 @@ class dawg_node():
 
 	def add_word(self, word):
 		if(word==''):
-			self._paths['$']=dawg_node(True)
+			self._paths['$']=dawg_node(self._root,True)
 			self._paths['$'].add_parent(self)
 			return
-		ltr = word[0]
-		if ltr not in self._paths:
+		letter = word[0]
+		if letter not in self._paths:
 			self.increment_counter()
-			self._paths[ltr] = dawg_node()
-			self._paths[ltr].add_parent(self)		
-			self._root._all_nodes.append(self._paths[ltr])
+			self._paths[letter] = dawg_node(self._root)
+			self._paths[letter].add_parent(self)		
+			self._root._all_nodes.append(self._paths[letter])
 
-		self._paths[ltr].add_word(word[1:])
-		if len(self._paths[ltr]._parents) == 0:
+		self._paths[letter].add_word(word[1:])
+		if len(self._paths[letter]._parents) == 0:
 			print("WTF")
 
 	def has_path(self, letter):
@@ -156,7 +152,14 @@ class dawg_node():
 
 class starter_dawg_node(dawg_node):
 	def __init__(self):
-	return dawg_node(False, True)
+		dawg_node.__init__(self, self)
+		self.size_counter = 1
+		self._root = self
+		self._all_nodes = []
+
+
+	def remove_dupes(self):
+		
 
 
 
