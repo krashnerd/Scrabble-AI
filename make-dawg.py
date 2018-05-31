@@ -10,7 +10,6 @@ class dawg_node():
 		self._paths = {}
 		self._followers = [False] * 27
 		self._parents = []
-		self.SOF = isSOF
 		self._root = root
 
 		self._ind = 0
@@ -26,7 +25,6 @@ class dawg_node():
 
 	def add_parent(self, parent):
 		self._parents.append(parent)
-		self._root = parent._root
 
 	def add_words(self, wordList):
 		for word in wordList:
@@ -44,11 +42,6 @@ class dawg_node():
 
 	def increment_counter(self):
 		self._root.size_counter += 1
-
-	def count_found(self, word):
-		self._root.append(word)
-
-
 
 	def count_words(self, parentStr = ""):
 		#Counts the number of possible words that can be made from a given node. Recursive.
@@ -104,27 +97,10 @@ class dawg_node():
 		return self._paths[word[0]].contains(word[1:])
 
 	def __ne__(self,other):
-		return self.__class__ != other.__class__ or not self.__eq__(other)
+		str(self)!= str(other)
 
 	def __eq__(self, other):
-		if other.__class__.__name__ != 'dawg_node':
-			return False
-
-		# if self.term != other.term:
-		# 	return False
-
-		if "".join(self.valid_paths()) != "".join(other.valid_paths()):
-			return False
-
-		# for char in string.ascii_uppercase:
-		# 	if(char in self._paths != char in other._paths):
-		# 		return False
-
-		for char in self.valid_paths():
-			if(self._paths[char] != other._paths[char]):
-				return False
-
-		return True
+		return str(self)==str(other)
 
 	def prettyprint(self, offset = 0):
 		#Pretty printing
@@ -157,8 +133,67 @@ class starter_dawg_node(dawg_node):
 		self._root = self
 		self._all_nodes = []
 
-
 	def remove_dupes(self):
+		
+		""" Get rid of duplicate nodes by iterating through list of all nodes. 
+		Time inefficient but it's a one time thing."""
+
+		def get_path(child, parent = None):
+			"""Returns the letter of the child's parent that paths the 
+			parent to the child"""
+			
+			if(parent == None): 
+				parent = child._parents[0]
+
+			for letter in parent.valid_paths():
+				if(parent._paths[letter] is child):
+					return letter
+
+		num_nodes = len(self._all_nodes)
+		original_node = 0
+		# Want to go to the second-to-last node, since by the time 
+		# it gets to the last node that one must be unique
+		while(original_node < num_nodes - 1):
+			dupe_node_indices = []
+
+			# Generate a list of all the indices of duplicate nodes.
+			for possible_dupe_index in range(original_node + 1, num_nodes):
+				
+				if self._all_nodes[original_node] == self._all_nodes[possible_dupe_index]:
+					dupe_node_indices.append(possible_dupe_index)
+					assert(self._all_nodes[original_node] is not self._all_nodes[possible_dupe_index])
+
+			num_dupes = len(dupe_node_indices)
+
+			for offset in range(num_dupes):
+
+				#Because the nodes are getting removed from the list, have to subtract offset
+				dupe_node_index = dupe_node_indices[offset] - offset
+
+				dead = self._all_nodes[dupe_node_index]
+
+				parent = dead._parents[0]
+				
+				path = get_path(dead, parent)
+				
+				#Instead of pointing to dupe node, points to original node
+				parent._paths[path] = self._all_nodes[original_node]
+				self._all_nodes[original_node].add_parent(parent)
+				self._all_nodes.pop(dupe_node_index)
+
+			num_nodes -= num_dupes
+
+
+
+				#for parent in self._all_nodes[dupe_node_index]:
+			original_node += 1
+
+
+
+
+
+
+			# num_nodes -= 1
 		
 
 
@@ -194,10 +229,14 @@ def test_wordcount():
 	if(expected_words > dawg.count_words()):
 		test_wordcontents()
 
-	print([str(x) for x in dawg._all_nodes])
-	print("nodes: %d" % dawg.size_counter)
-	print(dawg)
-	print(dawg.prettyprint())
+	#print([str(x) for x in dawg._all_nodes])
+	print("nodes before removing: %d" % dawg.size_counter)
+	print(str(dawg))
+	dawg.remove_dupes()
+	print("nodes after removing: %d" % len(dawg._all_nodes))
+	print(str(dawg))
+
+	print(testOutcome(expected_words,dawg.count_words()))
 
 def test_wordcontents():
 	dawg = starter_dawg_node()
@@ -219,11 +258,6 @@ def test_wordcontents():
 	print("Found %d words out of %d" % (found,total))
 
 
-
-
-
-
-
 def main():
 	counter = 0
 	dawg = dawg_node(False,True)
@@ -240,9 +274,6 @@ def main():
 	test_wordcount()
 
 	# print('Testing wordcount:\n')
-	 
-
-
 
 if __name__ == "__main__":
 	main()
