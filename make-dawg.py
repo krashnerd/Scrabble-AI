@@ -1,5 +1,6 @@
 import string
 from functools import reduce
+import os.path
 # EOF = dawg_node(True);
 global counter
 
@@ -12,7 +13,7 @@ class dawg_node():
 		self._parents = []
 		self._root = root
 
-		self._ind = 0
+		self._all_list_location = 0
 		
 			
 
@@ -26,9 +27,11 @@ class dawg_node():
 	def add_parent(self, parent):
 		self._parents.append(parent)
 
-	def add_words(self, wordList):
-		for word in wordList:
-			self.add_word(word)
+	def update_location(self, index):
+		# Sets the marker for where it is in the list of all nodex.
+		# Will be used to make an easily parseable string representation
+		self._all_list_location = index
+
 
 	def wordcount_test_increment(self):
 		self._num_words_test_counter += 1
@@ -128,10 +131,20 @@ class dawg_node():
 
 class starter_dawg_node(dawg_node):
 	def __init__(self):
-		dawg_node.__init__(self, self)
+		dawg_node.__init__(self)
 		self.size_counter = 1
 		self._root = self
 		self._all_nodes = []
+
+	def construct_dawg(word_list):
+		self.add_words(word_list)
+		self.remove_dupes()
+		for node_index in range(len(self._all_nodes)):
+			self._all_nodes[node_index].update_location(node_index)
+
+	def export(self, filename):
+		pass
+		# if()
 
 	def remove_dupes(self):
 		
@@ -183,98 +196,34 @@ class starter_dawg_node(dawg_node):
 
 			num_nodes -= num_dupes
 
-
+	def add_words(self, word_list):
+		for word in wordList:
+			self.add_word(word) 
 
 				#for parent in self._all_nodes[dupe_node_index]:
-			original_node += 1
-
-
-
-
-
 
 			# num_nodes -= 1
 		
 
 
 
+# def main():
+# 	counter = 0
+# 	dawg = dawg_node(False,True)
 
+# 	lst_nodes = []
+# 	lettercount = 0
+# 	# for word in open("dict-sample.txt").readlines():
+# 	# 	dawg.wordcount_test_increment += 1
+# 	# 	wrd = word[:-1]#get rid of whitespace
 
-def testOutcome(expected, actual):
-	if expected==actual:
-		return "TEST PASSED\n\n"
-	else:
-		return "Expected: %d Actual: %d\n\n" % (expected, actual)
+# 	# 	lettercount += len(wrd)
+# 	# 	dawg.add_word(wrd)
 
-def test_wordcount():
-	dawg = starter_dawg_node()
-	filename = "dict-sample.txt"
+# 	test_wordcount()
 
-	words_in_file = [(w[:-1] if w[-1]=='\n' else w)
-						for w in open(filename).readlines()]
+# 	# print('Testing wordcount:\n')
 
-	expected_words = len(words_in_file)
-
-	dawg.add_words(words_in_file)
-
-	print("Testing wordcount...\n")
-	print(testOutcome(expected_words,dawg.count_words()))
-
-	# print("word_count_found len: %d" %len(dawg._words_count_found))
-	# if(for word in words_in_file:
-	# 	if(word not in dawg._words_count_found):
-	# 		print("Count didn't find %s" % word)
-
-
-	if(expected_words > dawg.count_words()):
-		test_wordcontents()
-
-	#print([str(x) for x in dawg._all_nodes])
-	print("nodes before removing: %d" % dawg.size_counter)
-	print(str(dawg))
-	dawg.remove_dupes()
-	print("nodes after removing: %d" % len(dawg._all_nodes))
-	print(str(dawg))
-
-	print(testOutcome(expected_words,dawg.count_words()))
-
-def test_wordcontents():
-	dawg = starter_dawg_node()
-
-	filename = "dict-sample.txt"
-	nl = '\n'
-	words_in_file = open(filename).read().split('\n')
-	print(words_in_file)
-	dawg.add_words(words_in_file)
-	found = 0
-	total = 0
-
-	for word in words_in_file:
-		total += 1
-		if (dawg.contains(word)):
-			found += 1
-		else:
-			print("Dawg does not contain %d" % word)
-	print("Found %d words out of %d" % (found,total))
-
-
-def main():
-	counter = 0
-	dawg = dawg_node(False,True)
-
-	lst_nodes = []
-	lettercount = 0
-	# for word in open("dict-sample.txt").readlines():
-	# 	dawg.wordcount_test_increment += 1
-	# 	wrd = word[:-1]#get rid of whitespace
-
-	# 	lettercount += len(wrd)
-	# 	dawg.add_word(wrd)
-
-	test_wordcount()
-
-	# print('Testing wordcount:\n')
-
-if __name__ == "__main__":
-	main()
+# if __name__ == "__main__":
+# 	main()
 
