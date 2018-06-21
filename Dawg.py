@@ -2,8 +2,7 @@ import string
 from functools import reduce
 from pathlib import Path
 # EOF = dawg_node(True);
-global counter
-
+import json
 counter = 0
 class dawg_node():
 	""" Node of a Directed-Acrylic Word Graph, to be used for Scrabble AI"""
@@ -12,10 +11,12 @@ class dawg_node():
 		self._followers = [False] * 27
 		self._parents = []
 		self._root = root
+		self._str = ''
+		self._string_updated = True
 
 		self._all_list_location = 0
-		self.valid_paths = lambda:filter(
-			lambda x: x in self._paths, (list(string.ascii_uppercase) + ['$']))
+		self.valid_paths = lambda:list(filter(
+			lambda x: x in self._paths, (list(string.ascii_uppercase) + ['$'])))
 
 		
 			
@@ -46,6 +47,10 @@ class dawg_node():
 
 	def wordcount_test_increment(self):
 		self._num_words_test_counter += 1
+
+	def json(self):
+		pass
+
 
 	# def valid_paths(self):
 	# 	return filter(lambda x: x in self._paths, (list(string.ascii_uppercase) + ['$']))
@@ -93,6 +98,9 @@ class dawg_node():
 		if len(word) > 0:
 			self._paths[letter].add_word(word[1:])
 
+		# 
+		self._string_updated = False
+
 	def has_path(self, letter):
 		return (letter in self._paths)
 
@@ -134,6 +142,8 @@ class dawg_node():
 	# 	for follower in self._valid+paths
 
 	def __str__(self):
+		if(self._string_updated):
+			return self._str
 		result = ""
 		valid_paths =list(self.valid_paths())
 		if len(valid_paths) == 0:
@@ -149,6 +159,10 @@ class dawg_node():
 					result += follower + str(self._paths[follower])
 				result += "|"
 			result = result[:-1] + ")"
+
+		#set string and flags
+		self._str = result
+		self._string_updated = True
 		return result
 
 
@@ -200,10 +214,16 @@ class Dawg(dawg_node):
 
 			f.write(str1)
 
-	def c_export(self):
+	def json_export(self):
 		filename = input("filename?")
-			if len(filename) < 4 or filename[-4:] != ".dwg":
-		filename = filename + ".dwg"
+		if len(filename) < 4 or filename[-4:] != ".json":
+			filename = filename + ".json"
+
+		all_attr = lambda d_node: {'len':len(d_node.valid_paths()), 'paths':[{path: d_node._paths[path]._all_list_location} for path in d_node.valid_paths()]}
+		return json.dumps([all_attr(node) for node in self._all_nodes],separators=(',', ':'))
+
+
+
 
 		
 
@@ -228,6 +248,7 @@ class Dawg(dawg_node):
 		# Want to go to the second-to-last node, since by the time 
 		# it gets to the last node that one must be unique
 		while(original_node < num_nodes - 1):
+			print("\rOn node %d of %2.2f, %d%% complete" % (original_node, num_nodes, (original_node/num_nodes)), end = '')
 			dupe_node_indices = []
 
 			# Generate a list of all the indices of duplicate nodes.
@@ -267,25 +288,4 @@ class Dawg(dawg_node):
 			# num_nodes -= 1
 		
 
-
-
-# def main():
-# 	counter = 0
-# 	dawg = dawg_node(False,True)
-
-# 	lst_nodes = []
-# 	lettercount = 0
-# 	# for word in open("dict-sample.txt").readlines():
-# 	# 	dawg.wordcount_test_increment += 1
-# 	# 	wrd = word[:-1]#get rid of whitespace
-
-# 	# 	lettercount += len(wrd)
-# 	# 	dawg.add_word(wrd)
-
-# 	test_wordcount()
-
-# 	# print('Testing wordcount:\n')
-
-# if __name__ == "__main__":
-# 	main()
 
