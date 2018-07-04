@@ -35,13 +35,14 @@ def brute_force(dict_start, tiles):
 
 	return curr_word
 
-def bruteforce_test(game)
+def bruteforce_test(game):
 	hand = game.return_hand()
 	best_word = brute_force(game._dictionary, hand)
-	print("Best word: %s - %d points." % ("".join([tile._letter for tile in best_word], score_firstword(best_word))))
+	print("Best word: %s - %d points." % ("".join([tile._letter for tile in best_word]), score_firstword(best_word)))
 
 def main():
 	a = Scrabble()
+	bruteforce_test(a)
 
 	
 
