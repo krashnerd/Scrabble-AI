@@ -1,5 +1,5 @@
 """Brute force best starter word"""
-
+import csv
 from functools import reduce
 import numpy as np
 from S_Board import Scrabble
@@ -42,9 +42,9 @@ def brute_force(dict_start, tiles):
 			if len(best_possible_followers) > 0:
 
 				local_max_hands = [([tile] + follower if follower != [] else [tile]) for follower in best_possible_followers]
-				for hand in local_max_hands:
-					if len(hand) == 7:
-						print('Found bingo: %s' % ''.join([t._letter for t in hand]))
+				# for hand in local_max_hands:
+				# 	if len(hand) == 7:
+				# 		print('Found bingo: %s' % ''.join([t._letter for t in hand]))
 
 				curr_score = score_firstword(local_max_hands[0])
 
@@ -59,7 +59,6 @@ def brute_force(dict_start, tiles):
 
 def bruteforce_test(game):
 	hand = game.return_hand()
-	game.print_hand(hand)
 	best_words = brute_force(game._dictionary, hand)
 	# print(best_words)
 	#for word in best_words:
@@ -69,11 +68,26 @@ def bruteforce_test(game):
 		score_firstword(best_words[0])))
 	# print("Best words: %s - %d points." % (", ".join([tile._letter for best_word in best_words for tile in best_word]), score_firstword(best_word)))
 
+def make_dataset():
+	with open('starting_hands_training_data.csv', 'w') as csvfile:
+		csvwriter = csv.writer(csvfile, quoting = csv.QUOTE_MINIMAL)
+		for i in range(300000//14):
+			game = Scrabble()
+			for hand in range(12):
+				hand = game.return_hand()
+				best_words = brute_force(game._dictionary, hand)
+				best_words.append([])
+				csvwriter.writerow([''.join(sorted([tile._letter for tile in hand])), str(score_firstword(best_words[0]))])
+		#print([''.join([tile._letter for tile in hand]),str(score_firstword(best_words[0]))])
+			# print(best_words)
+			#for word in best_words:
+			
+	# print("Best words: %s - %d points." % (", ".join([tile._letter for best_word in best_words for tile in best_word]), score_firstword(best_word)))
+
+
 def main():
 	a = Scrabble()
-	bruteforce_test(a)
-
-	
+	make_dataset()
 
 
 

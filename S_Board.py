@@ -26,24 +26,19 @@ class Scrabble(object):
 		border = ("-" * len(out_str))
 		print("\n".join([border, out_str, border]))
 
-	def get_dictnode(self, word):
-			""" Gets the node of a VALID word in the dictionary"""
-			node = self._dictionary
-
+	def get_dictnode(self, word, _dict = None):# self._dictionary):
+			"""Gets the from a valid first portion of a word in a dictionary"""
+			node = self._dictionary if _dict == None else _dict
 			try:
 				for letter in word:
 					node = node[letter]
 
 			except KeyError as key_err:
-				print(key_err)
-				print("%s not in dictionary" % word)
-				return None
+				#print(key_err)
+				#print("%s not in dictionary" % word)
+				return {}
 
 			return node
-
-
-
-
 
 
 	def print_board(self):
@@ -107,7 +102,7 @@ class Scrabble(object):
 						for y0,dy in [(0,1),(14,-1)]
 							for mx,my in [(5,1),(5,5),(1,5)]]
 
-			self._grid = [[]] * 15
+			self._grid = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
 			for r in range(15):
 				for c in range(15):
 					_bonusType = None
@@ -116,36 +111,43 @@ class Scrabble(object):
 						if (r, c) in coord_list:
 							_bonusType = poss_bonus
 
-					self._grid[r].append(self.Board_Space(self, self._game, (r, c), _bonusType))
+					self._grid[r].append(self.Board_Space(self._game, self, (r, c), _bonusType))
 
-		
-		def print_grid(self):
-			print("_" * 76)
+		def place_tile_on_board(self, tile, coords):
+			if(tile == None):
+				return
+			r, c = coords
+			self._grid[r][c].place_tile_on_space(tile)
+			#print(self._grid)
+		def __repr__(self):
+			result = ""
+			result += ("_" * 76) + '\n'
 			for row in self._grid:
 				for printedRowFn in [
 						lambda tile: "   ",
 						lambda tile:
-							(" %s " % tile._letter) if tile._occupied 
+							(" %s " % tile._tile._letter) if tile._occupied 
 							else 
 								tile._printedBonusType if tile._bonusType is not None 
 								else 
 									"   ",
 						 lambda tile: "___"]:
 
-					print("|%s|" % "|".join(map(printedRowFn, row)))
-
-		def get(r,c):
+					result += ("|%s|\n" % "|".join(map(printedRowFn, row)))
+			return result
+		def get(self, r,c = None):
+			if c==None:
+				r,c = r
 			return self._grid[r][c]
 
 		class Board_Space(object):
-
 
 			def __init__(self, game ,grid,loc, bonusType = None):
 				"""Makes a board space, taking the game
 				, grid, its own location and a bonus type if it is a bonus tile"""
 				self._game = game
 				self._occupied = False
-				self._letter = None
+				self._tile = None
 				self._bonusType = bonusType
 				self._printedBonusType = ("%sx%s" % (bonusType[0],bonusType[1]) if self._bonusType is not None else "  ")
 
@@ -178,40 +180,65 @@ class Scrabble(object):
 
 				return self._loc == (7,7)
 
-			def placeable_letters(self, direction):
+			def placeable_letters(self, scan_direction):
+				assert(not self._occupied)
 				"""Returns a function saying if a given letter can be placed as a suffix in a given direction"""
-				dr, dc = (1, 0) if direction[0].lower() == "v" else (0, 1)
+				dr, dc = (1, 0) if scan_direction[0].lower() == "v" else (0, 1)
+				#wanted_fn = lambda bf: 
 
-				prefix = ""
+				prefix, suffix = "",""
+
 				curr_r, curr_c = self._loc
-				for back_forth in [-1]:#, 1]:
+
+				for bf in [-1, 1]:
+					pass
+				def get_prefsuf(bf):
+					pref=None
 					while True:
+						#Shifting current coordinates
 						curr_r, curr_c = (curr_r + (back_forth * dr), curr_c - (back_forth * dc))
 
-						if not self.in_range(curr_r, curr_c):
+						#End loop if out of range
+						if not self.in_range((curr_r, curr_c)):
+							print('OOR')
 							break
 
+						#Get tile at that point
 						curr = self._grid.get(curr_r, curr_c)
 						
+						#
 						if not curr._occupied:
 							break
+						n = curr._tile._letter
 
-						{-1:prefix, 1:suffix}
-						prefix = curr._letter + prefix
+						if back_forth == -1:
+							prefix = n + prefix 
+						else:
+							suffix += n
 
-				if len(prefix) == 0:
+				if len(prefix) == 0 and len(suffix) == 0:
+					#print('RT')
 					return lambda letter: True
 
-				poss_suffixes_node = self._game.get_dictnode(prefix)				 
+				poss_letters_node = self._game.get_dictnode(prefix)				 
 
-				valid_suffix_list = [suffix for suffix in poss_suffixes_node.keys() if '$' in poss_suffixes_node[suffix]]
-				if len(valid_suffix_list) == 0:
+				valid_letters = [letter for letter in poss_letters_node.keys() 
+									if dawg_parser.check_word(letter + suffix, poss_letters_node)]
+
+				if len(valid_letters) == 0:
+					print('NVL')
 					return lambda letter: False
-				
+				print('asdf')
 				return lambda letter: letter in valid_suffix_list
 
+			def place_tile_on_space(self, tile):
+				assert(self._occupied == False)
+				assert(self._tile == None)
+				self._occupied = True
+				self._tile = tile
 
-
+			def __repr__(self):
+				return ' ' if self._tile == None else self._tile._letter
 
 
 def gui_test():
