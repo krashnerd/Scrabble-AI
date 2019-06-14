@@ -119,6 +119,14 @@ class Scrabble(object):
 			r, c = coords
 			self._grid[r][c].place_tile_on_space(tile)
 
+		def __getitem__(self, r, c = None):
+			if c is None:
+				return self._grid[r]
+			return self._grid[r][c]
+
+		def __setitem__(self, ind, value):
+			r, c = ind
+			self.grid[r][c] = value
 
 		def __repr__(self):
 			result = ""

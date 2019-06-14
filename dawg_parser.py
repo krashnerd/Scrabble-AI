@@ -19,6 +19,8 @@ def uncompress_string(data):
         raise RuntimeError("Could not decode/unzip the contents")
     return j.decode('ascii').replace("\\", "")
 
+
+
 def get_dawg(filename):
     file = open(filename)
     data = file.read()

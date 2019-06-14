@@ -15,12 +15,88 @@ def score_firstword(tiles):
         
     return ((bonus_score + sum(_tile._points for _tile in tiles)) * 2) + (50 if len(tiles) == 7 else 0)
 
+
 def score_horiz_word(game, new_tile_locs):
+    board = game._board
     main_word_score = 0
     r,c = new_tile_locs[0]
+    letter = board.get_letter(r, c)
+
+    # Go to beginning of word
+    while c >= 0 and letter is not None:
+        c -= 1
+        letter = game._board.get_letter(r, c)
+
+    c += 1
+    begin = c
+
+    while c < 15 and letter is not None:
+        c += 1
+        letter = game._board.get_letter(r, c)
+
+    end = c
+
+    total_points = 0
+
+    def score_word(word_locs):
+        word_points = 0
+        word_mult = 1
+
+        for c in range(start, end):
+            space = board[r, c]
+            tile = space._tile
+            letter_mult = 1
+
+            # Apply bonus
+            if (r, c) in new_tile_locs:
+                bonus = space._bonusType
+                if bonus is not None:
+                    bonus_num = int(bonus[1])
+                    if bonus[0] == "W":
+                        word_mult *= bonus_num
+                    else:
+                        letter_mult = bonus_num
+
+            word_points += letter_mult * tile._points
+
+        return word_mult * word_points
+
+    main_word = [(r, curr_c) for curr_c in range(begin, end)]
+    all_words = [main_word]
+
+    for curr_r, curr_c in new_tile_locs:
+        while curr_r >= 0 and letter is not None:
+            curr_r -= 1
+            letter = game._board.get_letter(curr_r, curr_c)
+        curr_r += 1
+
+        all_coords = set()
+
+        while curr_r < 15 and letter is not None:
+            letter = game._board.get_letter(curr_r, curr_c)
+            all_coords.append((curr_r, curr_c))
+            curr_r += 1
+
+    all_words = [word for word in all_words if len(word) > 1]
+
+    score = sum([score_word(word) for word in all_words])
+
     
 
-    for loc in new_tile_locs:
+    total_points = word_points * word_mult
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -46,7 +122,7 @@ def word_endpoints(game, row_ind, restrictions_list):
     """Given a certain row in a certain game, as well as
     the regex for how spaces are limited by the columns, determine all possible starts and ends"""
 
-    occupied_spaces = set([col_ind for col_ind in range(15) if game._board.get(row_ind, col_ind) is not None])
+    occupied_spaces = set([col_ind for col_ind in range(15) if not game._board.get(row_ind, col_ind)._occupied])
 
     bordering_spaces = set([col_ind for col_ind in range(15)
         if (restrictions_list[col_ind] != '.') or ({col_ind + 1, col_ind - 1} & occupied_spaces != set()) and
