@@ -93,10 +93,14 @@ class Scrabble(object):
 			_DWS = [(7 +dx*ffset,7+dy*ffset) for ffset in range(3,7) for dx in [-1,1] for dy in [-1,1]] 
 			_DWS.append((7,7))
 
+			# Double letters
+
 			_DLS = [(x0+dx*mx,y0+dy*my)
 					for x0,dx in [(0,1),(14,-1)] 
 						for y0,dy in [(0,1),(14,-1)]
 							for mx,my in [(0,3),(2,6),(3,7),(6,6),(3,0),(6,2),(7,3)]]
+
+			# Triple letters
 			_TLS = [(x0+dx*mx,y0+dy*my) 
 					for x0,dx in [(0,1),(14,-1)]
 						for y0,dy in [(0,1),(14,-1)]
