@@ -1,11 +1,11 @@
-import dawg_parser
+import build_dictionary
 from numpy import random
 class Scrabble(object):
 	def __init__(self):
 		self._bag = self.Bag(self)
 		self._board = self.Board(self)
-		self._dictionary = dawg_parser.get_dawg("full_output.json")
-		self.check_word = lambda word:dawg_parser.check_word(word, self._dictionary)
+		self._dictionary = build_dictionary.get_dawg("dictionary/dictionary.json")
+		self.check_word = lambda word:build_dictionary.check_word(word, self._dictionary)
 
 	def score(word):
 		points = 0
@@ -241,7 +241,7 @@ class Scrabble(object):
 				poss_letters_node = self._game.get_dictnode(prefix)				 
 
 				valid_letters = [letter for letter in poss_letters_node.keys() 
-									if dawg_parser.check_word(letter + suffix, poss_letters_node)]
+									if build_dictionary.check_word(letter + suffix, poss_letters_node)]
 
 				if len(valid_letters) == 0:
 					print('NVL')

@@ -85,25 +85,6 @@ def score_horiz_word(game, new_tile_locs):
 
     total_points = word_points * word_mult
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
 def make_regex(game, row_ind):
     """Creates a regular expression for the possible letters in each square of the row"""
     possibilities = [[] for _ in range(15)]
@@ -186,30 +167,30 @@ def get_all(game, row, letters):
 
         for idx, tile in enumerate(tiles):
 
-        # Next letter is in the dictionary and the tile hasn't already been checked
-        if tile._letter in dict_start and (idx == 0 or tile._letter not in [prev._letter for prev in tiles[:idx]]):
+            # Next letter is in the dictionary and the tile hasn't already been checked
+            if tile._letter in dict_start and (idx == 0 or tile._letter not in [prev._letter for prev in tiles[:idx]]):
 
-            # list of all remaining tiles.
-            remaining_tiles = [_tile for _tile in tiles if _tile is not tile]
-            
-            #Recursive call
-            best_possible_followers = brute_force(dict_start[tile._letter], remaining_tiles)
+                # list of all remaining tiles.
+                remaining_tiles = [_tile for _tile in tiles if _tile is not tile]
+                
+                #Recursive call
+                best_possible_followers = brute_force(dict_start[tile._letter], remaining_tiles)
 
-            #If there was a word
-            if len(best_possible_followers) > 0:
+                #If there was a word
+                if len(best_possible_followers) > 0:
 
-                local_max_hands = [([tile] + follower if follower != [] else [tile]) for follower in best_possible_followers]
-                # for hand in local_max_hands:
-                #   if len(hand) == 7:
-                #       print('Found bingo: %s' % ''.join([t._letter for t in hand]))
+                    local_max_hands = [([tile] + follower if follower != [] else [tile]) for follower in best_possible_followers]
+                    # for hand in local_max_hands:
+                    #   if len(hand) == 7:
+                    #       print('Found bingo: %s' % ''.join([t._letter for t in hand]))
 
-                curr_score = score_firstword(local_max_hands[0])
+                    curr_score = score_firstword(local_max_hands[0])
 
-                if curr_score >= best_score:
-                    if curr_score > best_score:
-                        curr_words = []
-                    curr_words += local_max_hands
-                    best_score = curr_score
+                    if curr_score >= best_score:
+                        if curr_score > best_score:
+                            curr_words = []
+                        curr_words += local_max_hands
+                        best_score = curr_score
 
 
 
