@@ -1,7 +1,7 @@
 """ Parsing JSON file and making DAWG """
 import time, zlib, json, AlphaDict
 from base64 import b64encode, b64decode
-
+import pickle
 def check_word(word, start):
     if(word[-1] != "$"):
         word += "$"
@@ -21,20 +21,14 @@ def uncompress_string(data):
 
 
 
-def get_dawg(filename):
+def pickle_dawg(filename):
     file = open(filename)
     data = file.read()
     file.close()
 
-    types = filename.split(".")
-    if types[-1] == "zip64":
-        data = uncompress_string(data)
-        print(data[:50])
-
     data = json.loads(data)
 
     dawg_nodes = [dict() for _ in range(len(data))]
-
 
     for idx, node in enumerate(data):
         for path in node['paths']:
@@ -43,11 +37,19 @@ def get_dawg(filename):
 
     # size = sum([sys.getsizeof(node) for node in dawg_nodes])
     # print("Size:", size)
+    with open("dictionary/dict.bytesIO", "wb") as file:
+        pickle.dump(dawg_nodes, file)
 
     return dawg_nodes[0]
 
+def get_dictionary(filename = "dictionary/dict.bytesIO"):
+    with open(filename, "rb") as dictfile:
+        dawg = pickle.load(dictfile)
+
+    return dawg[0]
+
 def main():
-    dictionary = get_dawg("dictionary.json")
+    dictionary = get_dictionary()
     inp = None
     print("Input a word to check in the dictionary, or input 'Q' to quit")
     while inp != "Q":
