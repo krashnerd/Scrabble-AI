@@ -76,12 +76,6 @@ class Board:
 		space = self.grid[r][c]
 		return space.tile.letter if space.occupied else None
 
-	def on_same_row(coords):
-		zip(*coords)
-
-	def score_word(self, new_tile_locs):
-		if len(new_tile_locs) == 1 or new_tile_locs[0]
-
 	def score_word(self, new_tile_locs_preprocess):
 		rows, cols = zip(*new_tile_locs_preprocess)
 

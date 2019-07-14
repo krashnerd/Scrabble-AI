@@ -8,7 +8,7 @@ class Scrabble(object):
 		self.dictionary = build_dictionary.get_dawg("dictionary/dictionary.json")
 		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
 		points = {1:"AEIOULNSTR",2:"DG",3:"BCMP",4:"FHVWY",5:"K",8:"JX",10:"QZ"}
-		self.points = dict()
+		self.points = dict() # dictionary for point values of each letter
 		for num, letters in list(points):
 			for letter in letters:
 				self.points[letter] = num

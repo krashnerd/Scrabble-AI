@@ -7,8 +7,14 @@ def check_word(word, start):
         word += "$"
     curr = start
     for letter in word:
-        if letter not in curr or curr[letter] is None:
+        print(letter)
+        if letter not in curr:
             return False
+        elif curr[letter] is None:
+            return False
+
+        # if letter not in curr or curr[letter] is None:
+        #     return False
         curr = curr[letter]
     return True
 
@@ -21,14 +27,14 @@ def uncompress_string(data):
 
 
 
-def pickle_dawg(filename):
-    file = open(filename)
+def pickle_dawg(infile = "dictionary/dictionary.json", outfile = "dictionary/Alphadict.bytesIO"):
+    file = open(infile)
     data = file.read()
     file.close()
 
     data = json.loads(data)
 
-    dawg_nodes = [dict() for _ in range(len(data))]
+    dawg_nodes = [AlphaDict.AlphaDict() for _ in range(len(data))]
 
     for idx, node in enumerate(data):
         for path in node['paths']:
@@ -37,7 +43,7 @@ def pickle_dawg(filename):
 
     # size = sum([sys.getsizeof(node) for node in dawg_nodes])
     # print("Size:", size)
-    with open("dictionary/dict.bytesIO", "wb") as file:
+    with open(outfile, "wb") as file:
         pickle.dump(dawg_nodes, file)
 
     return dawg_nodes[0]
@@ -49,14 +55,17 @@ def get_dictionary(filename = "dictionary/dict.bytesIO"):
     return dawg[0]
 
 def main():
-    dictionary = get_dictionary()
+    d1 = get_dictionary("dictionary/dict.bytesIO")
+    d2 = get_dictionary("dictionary/Alphadict.bytesIO")
     inp = None
     print("Input a word to check in the dictionary, or input 'Q' to quit")
     while inp != "Q":
         if inp is not None:
+
             t1 = time.time()
-            is_word = check_word(inp, dictionary)
+            is_word = check_word(inp, d1)
             t2 = time.time()
+
             mic_seconds = int((t2 - t1) * 1000000)
             print("Time: %d microseconds\n%s is%s a word!\n" % (mic_seconds, inp, "" if is_word else " not"))
         inp = input("Word: ").upper()
