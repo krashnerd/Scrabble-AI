@@ -15,48 +15,6 @@ def score_firstword(tiles):
         
     return ((bonus_score + sum(_tile.points for _tile in tiles)) * 2) + (50 if len(tiles) == 7 else 0)
 
-def make_regex(game, row_ind):
-    """Creates a regular expression for the possible letters in each square of the row"""
-    possibilities = [[] for _ in range(15)]
-    board = game.board
-    for col_ind in range(15):
-        space = board.get(row_ind, col_ind)
-        if space.occupied:
-            possibilities[col_ind] = [space.tile.letter]
-        else:
-            possibilities[col_ind] = "[{}]".format(get_letters_row((row_ind, col_ind), game))
-            
-
-    
-
-def word_endpoints(game, row_ind, restrictions_list):
-    """Given a certain row in a certain game, as well as
-    the regex for how spaces are limited by the columns, determine all possible starts and ends"""
-
-    occupied_spaces = set([col_ind for col_ind in range(15) if not game.board.get(row_ind, col_ind).occupied])
-
-    bordering_spaces = set([col_ind for col_ind in range(15)
-        if (restrictions_list[col_ind] != '.') or ({col_ind + 1, col_ind - 1} & occupied_spaces != set()) and
-         col_ind not in occupied_spaces])
-
-    # Count the starting square as a bordering space.
-    if row_ind == 7 and occupied_spaces == set():
-        bordering_spaces.add(7)
-
-    empty_spaces = set([col_ind for col_ind in range(15) if col_ind not in (occupied_spaces + bordering_spaces)])
-
-    pairs = []
-    for start in range(15):
-        for end in range(start, 15):
-            wordrange = set([i for i in range(start, end)])
-            if len(wordrange & empty_spaces) > 7:
-                continue
-            if (wordrange & (occupied_spaces|bordering_spaces)) == set():
-                continue
-            pairs.append(start, end)
-
-    return pairs
-
 def get_letters_row(coords, game):
     """ Given a coordinate, find what letters 
     can be put in said coordinate assuming that only one letter is going in the column
@@ -86,14 +44,92 @@ def get_letters_row(coords, game):
         if game.check_word(word):
             possible += letter
 
-    return possible
+    return "[{}]".format(possible)
+
+def make_regex(game, row_ind):
+    """List of regexes for each square in the row, restricting based on the column"""
+    possibilities = [[] for _ in range(15)]
+    board = game.board
+    for col_ind in range(15):
+        space = board.get(row_ind, col_ind)
+        if space.occupied:
+            possibilities[col_ind] = [space.tile.letter]
+        else:
+            possibilities[col_ind] = get_letters_row((row_ind, col_ind), game)
+
+    return possibilities
+
+def word_endpoints(game, row_ind, restrictions_list, tiles = None):
+    """Given a certain row in a certain game, as well as
+    the regex for how spaces are limited by the columns, determine all possible starts and ends.
+    Determines the start and end of the actual word, not the start and end of where tiles would be placed, 
+    so if the placement would be a suffix, for example if the row contained the word "WORLD", 
+    and the move would just be to place an S on the end, the start point would be the location of the W, not the location of the S
+    """
+
+    occupied_spaces = set([c for c in range(15) if game.board.get(row_ind, c).occupied])
+
+    bordering_spaces = set([c for c in range(15)
+        if (restrictions_list[c] != '.') or
+            ({c + 1, c - 1} & occupied_spaces)]) -
+            occupied_spaces
+
+    unplayable = set([c for c in range(15) if restrictions_list[c] == "[]"])
+
+    # Count the starting square as a bordering space.
+    if row_ind == 7 and occupied_spaces == set():
+        bordering_spaces.add(7)
+
+    empty_spaces = set([a for a in range(15)]) - occupied_spaces
+
+    pairs = []
+    for start in range(15):
+        if (start - 1) in occupied_spaces:
+            continue
+
+        for end in range(start, 15):
+            if (end + 1) in occupied_spaces:
+                continue
+
+            wordrange = set([i for i in range(start, end)])
+            if len(wordrange & empty_spaces) > 7:
+                continue
+
+            if wordrange & bordering_spaces:
+                pairs.append(start, end)
+
+    return pairs
+
+
 
 def get_all(game, row, letters):
     """Get all possible moves with a given row and set of letters"""
     poss_letters = make_regex(game, row)
     endpoint_pairs = word_endpoints(game, row, poss_letters)
+    board = game.board
     for start, end in endpoint_pairs: 
+        tiles_remaining = tiles[:]
+        dict_node = game.dictionary
 
+        def search_moves_rec(curr_loc = (row, start), curr_dict = game.dict, tiles_left = tiles[:]):
+            curr_letter = game.board[*curr_loc].get_letter()
+            results = []
+            if curr_letter is None:
+                for tile in tiles_left:
+                    if tile.letter in curr_dict:
+                        removed = [x for x in tiles if x is not tile]
+                        results.concat(search_moves_recursive)
+
+
+            
+
+
+    for c in range(*endpoints):
+
+
+
+
+        curr_tile = 
 
         for idx, tile in enumerate(tiles):
 
@@ -121,6 +157,7 @@ def get_all(game, row, letters):
                             curr_words = []
                         curr_words += local_max_hands
                         best_score = curr_score
+
 
 
 
