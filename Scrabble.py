@@ -3,22 +3,18 @@ from numpy import random
 from Board import Board
 class Scrabble(object):
 	def __init__(self):
-		self.bag = Bag(self)
-		self.board = Board(self)
-		self.dictionary = build_dictionary.get_dawg("dictionary/dictionary.json")
-		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
+		self.letter_dist = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
 		points = {1:"AEIOULNSTR",2:"DG",3:"BCMP",4:"FHVWY",5:"K",8:"JX",10:"QZ"}
 		self.points = dict() # dictionary for point values of each letter
-		for num, letters in list(points):
+		for num, letters in points.items():
 			for letter in letters:
 				self.points[letter] = num
 
-		
-		dist = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
 
-
-
-
+		self.bag = Bag(self)
+		self.board = Board(self)
+		self.dictionary = build_dictionary.get_dictionary("dictionary/dict.bytesIO")
+		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
 
 	def score(word):
 		points = 0
@@ -27,6 +23,9 @@ class Scrabble(object):
 		if len(word) == 7:
 			points += 50
 		return points
+
+	def score_word(self, locs):
+		return self.board.score_word(locs)
 
 	def return_hand(self, num_tiles=7):
 		return self.bag.pull_tiles(num_tiles)
@@ -65,7 +64,7 @@ class Bag(object):
 
 		for pointVal in points.keys():
 			for letter in points[pointVal]:
-				letter_amt = dist[ord(letter) - ord("A")]
+				letter_amt = self.game.letter_dist[ord(letter) - ord("A")]
 				for i in range(letter_amt):
 					self.tiles.append(Tile(self.game, letter, pointVal))
 		random.shuffle(self.tiles)

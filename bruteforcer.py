@@ -2,7 +2,7 @@
 import csv, string
 from functools import reduce
 import numpy as np
-from S_Board import Scrabble
+from Scrabble import Scrabble
 
 def score_firstword(tiles):
     _len = len(tiles)
