@@ -74,15 +74,47 @@ class ScoringTester(unittest.TestCase):
 
 		self.assertEqual(game.score_word(new_tiles), 8)
 
-	def test_regex_basic(self):
+	def test_regex_suffix(self):
 		letter_placements = blank_board[:]
 		letter_placements[7] = add_padding(6, 'MAN')
-		prettyprint(["".join(x) for x in zip(*list(map(list, letter_placements)))])
+		letter_placements = zip(*[list(x) for x in letter_placements])
 
 		game = game_from_string(letter_placements)
-		re = bruteforcer.make_regexes(game, 9)
-		for valid in 'EY':
-			pass
+		regs = bruteforcer.make_regexes(game, 9)
+
+		# Testing to be sure it isn't an instance of re.compile('.')
+		self.assertFalse(regs[7].match('0'))
+
+		for valid_letter in 'EY':
+			self.assertTrue(regs[7].match(valid_letter))
+
+		for invalid_letter in 'LFBVZX':
+			self.assertFalse(regs[7].match(invalid_letter))
+
+	def test_regex_prefix(self):
+		letter_placements = blank_board[:]
+		letter_placements[7] = add_padding(6, 'RAMP')
+		letter_placements = zip(*[list(x) for x in letter_placements])
+		prettyprint(letter_placements)
+
+		game = game_from_string(letter_placements)
+		# regs = bruteforcer.make_regexes(game, )
+
+
+		# Testing to be sure it isn't an instance of re.compile('.')
+		# self.assertFalse(regs[7].match('0'))
+
+		# for valid_letter in 'EY':
+		# 	self.assertTrue(regs[7].match(valid_letter))
+
+		# for invalid_letter in 'LFBVZX':
+		# 	self.assertFalse(regs[7].match(invalid_letter))
+
+
+
+	def test_regex_infix(self):
+		pass
+			
 
 
 

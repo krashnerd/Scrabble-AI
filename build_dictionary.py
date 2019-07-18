@@ -7,7 +7,6 @@ def check_word(word, start):
         word += "$"
     curr = start
     for letter in word:
-        print(letter)
         if letter not in curr:
             return False
         elif curr[letter] is None:

@@ -16,20 +16,20 @@ def score_firstword(tiles):
         
     return ((bonus_score + sum(_tile.points for _tile in tiles)) * 2) + (50 if len(tiles) == 7 else 0)
 
-def get_letters_row(coords, game):
+def get_tile_regex(coords, game):
     """ Given a coordinate, find what letters 
     can be put in said coordinate assuming that only one letter is going in the column
     (word is being placed horizontally)"""
+    matchall = re.compile(".")
     board = game.board
 
     r,c = coords
     letters = [board.get_letter(i, c) for i in range(15)]
     letters = "".join(['_' if x is None else x for x in letters])
 
-    string = "{}?{}".format(letters[:r], letters[r+1:])
-    
-    chunks = "_".split(string)
-
+    col = "{}?{}".format(letters[:r], letters[r+1:])
+    chunks = col.split("_")
+    chunk = None
     # Get the 
     for possible_chunk in chunks:
         if "?" in possible_chunk:
@@ -37,7 +37,7 @@ def get_letters_row(coords, game):
             break
 
     if len(chunk) == 1:
-        return '.'
+        return matchall
 
     possible = ""
     for letter in string.ascii_uppercase:
@@ -45,7 +45,7 @@ def get_letters_row(coords, game):
         if game.check_word(word):
             possible += letter
 
-    return "[{}]".format(possible)
+    return re.compile("[{}]".format(possible))
 
 def make_regexes(game, row_ind):
     """List of regexes for each square in the row, restricting based on the column"""
@@ -54,11 +54,11 @@ def make_regexes(game, row_ind):
     for col_ind in range(15):
         space = board.get(row_ind, col_ind)
         if space.occupied:
-            possibilities[col_ind] = "[{}]".format(space.tile.letter)
+            possibilities[col_ind] = re.compile("[{}]".format(space.tile.letter))
         else:
-            possibilities[col_ind] = get_letters_row((row_ind, col_ind), game)
+            possibilities[col_ind] = get_tile_regex((row_ind, col_ind), game)
 
-    return possibilities
+    return [re.compile(x) for x in possibilities]
 
 def word_endpoints(game, row_ind, restrictions_list, tiles = None):
     """Given a certain row in a certain game, as well as
@@ -106,11 +106,9 @@ def word_endpoints(game, row_ind, restrictions_list, tiles = None):
 
     return pairs
 
-
-
-def get_all(game, row, tiles):
+def get_all_row(game, row, tiles):
     """Get all possible moves with a given row and set of letters"""
-    row_regexes = [re.compile(x) for x in make_regex(game, row)]
+    row_regexes = make_regexes(game, row)
     endpoint_pairs = word_endpoints(game, row, poss_letters)
     board = game.board
 
@@ -154,7 +152,7 @@ def get_all(game, row, tiles):
 
         return results
 
-    poss_moves = {start:search_moves_rec(start) for (start, end) in endpoint_pairs}
+    return {start:search_moves_rec(start) for (start, end) in endpoint_pairs}
     
 def brute_force(dict_start, tiles):
     """ returns a word + score pair of the highest scoring word that can be made with the 7 tiles (assuming it's the first word)"""
@@ -199,6 +197,7 @@ def brute_force(dict_start, tiles):
     return curr_words
 
 def bruteforce_test(game):
+    assert False
     hand = game.return_hand()
     best_words = brute_force(game.dictionary, hand)
     # print(best_words)
