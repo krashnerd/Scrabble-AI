@@ -1,8 +1,9 @@
 """Brute force best starter word"""
-import csv, string
+import csv, string, re
 from functools import reduce
 import numpy as np
 from Scrabble import Scrabble
+
 
 def score_firstword(tiles):
     _len = len(tiles)
@@ -23,10 +24,10 @@ def get_letters_row(coords, game):
 
     r,c = coords
     letters = [board.get_letter(i, c) for i in range(15)]
+    letters = "".join(['_' if x is None else x for x in letters])
 
-    string = [("_" if letter is None else letter) for letter in letters]
-    string[r] = "?"
-    string = "".join(string)
+    string = "{}?{}".format(letters[:r], letters[r+1:])
+    
     chunks = "_".split(string)
 
     # Get the 
@@ -46,14 +47,14 @@ def get_letters_row(coords, game):
 
     return "[{}]".format(possible)
 
-def make_regex(game, row_ind):
+def make_regexes(game, row_ind):
     """List of regexes for each square in the row, restricting based on the column"""
-    possibilities = [[] for _ in range(15)]
+    possibilities = ['' for _ in range(15)]
     board = game.board
     for col_ind in range(15):
         space = board.get(row_ind, col_ind)
         if space.occupied:
-            possibilities[col_ind] = [space.tile.letter]
+            possibilities[col_ind] = "[{}]".format(space.tile.letter)
         else:
             possibilities[col_ind] = get_letters_row((row_ind, col_ind), game)
 
@@ -67,103 +68,94 @@ def word_endpoints(game, row_ind, restrictions_list, tiles = None):
     and the move would just be to place an S on the end, the start point would be the location of the W, not the location of the S
     """
 
-    occupied_spaces = set([c for c in range(15) if game.board.get(row_ind, c).occupied])
+    occupied_spaces = {c for c in range(15) if game.board.get(row_ind, c).occupied}
 
-    bordering_spaces = set([c for c in range(15)
+    bordering_spaces = {c for c in range(15)
         if (restrictions_list[c] != '.') or
-            ({c + 1, c - 1} & occupied_spaces)]) -
-            occupied_spaces
+            ({c + 1, c - 1} & occupied_spaces)} - occupied_spaces
 
-    unplayable = set([c for c in range(15) if restrictions_list[c] == "[]"])
+    unplayable = {c for c in range(15) if restrictions_list[c] == "[]"}
 
     # Count the starting square as a bordering space.
     if row_ind == 7 and occupied_spaces == set():
         bordering_spaces.add(7)
 
-    empty_spaces = set([a for a in range(15)]) - occupied_spaces
+    empty_spaces = {a for a in range(15)} - occupied_spaces
 
     pairs = []
     for start in range(15):
-        if (start - 1) in occupied_spaces:
+        if (start - 1) in occupied_spaces or start in unplayable:
             continue
 
+        max_end = start + 1
+
         for end in range(start, 15):
+
             if (end + 1) in occupied_spaces:
                 continue
 
             wordrange = set([i for i in range(start, end)])
-            if len(wordrange & empty_spaces) > 7:
-                continue
+
+            if len(wordrange & empty_spaces) > 7 or unplayable & wordrange:
+                break
 
             if wordrange & bordering_spaces:
-                pairs.append(start, end)
+                max_end = end
+
+        pairs.append(start, max_end)
 
     return pairs
 
 
 
-def get_all(game, row, letters):
+def get_all(game, row, tiles):
     """Get all possible moves with a given row and set of letters"""
-    poss_letters = make_regex(game, row)
+    row_regexes = [re.compile(x) for x in make_regex(game, row)]
     endpoint_pairs = word_endpoints(game, row, poss_letters)
     board = game.board
-    for start, end in endpoint_pairs: 
-        tiles_remaining = tiles[:]
-        dict_node = game.dictionary
 
-        def search_moves_rec(curr_loc = (row, start), curr_dict = game.dict, tiles_left = tiles[:]):
-            curr_letter = game.board[*curr_loc].get_letter()
-            results = []
-            if curr_letter is None:
-                for tile in tiles_left:
-                    if tile.letter in curr_dict:
-                        removed = [x for x in tiles if x is not tile]
-                        results.concat(search_moves_recursive)
+    def search_moves_rec(col, _dict = game.dict, tiles_left = tiles[:], word = ""):
+        """Backtracking search from a start point."""
+         
+        # Base case 1: End of column
+        if col == 15:
+            return [word] if game.check_word(word) else []
+        loc = (row, col)
 
-
-            
+        # Recursive case 1: Tile is occupied. Move to next.
+        letter = game.board[loc].get_letter()
 
 
-    for c in range(*endpoints):
+        if letter:
+            if letter not in _dict:
+                return []
+            return search_moves_rec(col + 1, _dict[letter], tiles_left, word + letter)
 
 
+        results = []
+
+        
+        
+        
+        # Recursive case 2: Nonempty square
+
+        # If it's a complete word and some tiles have been played, add to the results list.
+        if '$' in _dict and len(tiles_left) < len(tiles):
+            results.append(word)
 
 
-        curr_tile = 
+        
+        for tile in tiles_left:
+            letter = tile.letter
+            # If possible word following, and the letter can be played:
+            if letter in _dict and row_regexes[col].match(letter):
+                removed = [x for x in tiles if x is not tile]
+                results.concat(search_moves_rec(col + 1 , _dict = _dict[letter], tiles_left = removed, word = word + letter))
 
-        for idx, tile in enumerate(tiles):
+        return results
 
-            # Next letter is in the dictionary and the tile hasn't already been checked
-            if tile.letter in dict_start and (idx == 0 or tile.letter not in [prev.letter for prev in tiles[:idx]]):
-
-                # list of all remaining tiles.
-                remaining_tiles = [_tile for _tile in tiles if _tile is not tile]
-                
-                #Recursive call
-                best_possible_followers = brute_force(dict_start[tile.letter], remaining_tiles)
-
-                #If there was a word
-                if len(best_possible_followers) > 0:
-
-                    local_max_hands = [([tile] + follower if follower != [] else [tile]) for follower in best_possible_followers]
-                    # for hand in local_max_hands:
-                    #   if len(hand) == 7:
-                    #       print('Found bingo: %s' % ''.join([t.letter for t in hand]))
-
-                    curr_score = score_firstword(local_max_hands[0])
-
-                    if curr_score >= best_score:
-                        if curr_score > best_score:
-                            curr_words = []
-                        curr_words += local_max_hands
-                        best_score = curr_score
-
-
-
-
-
-
-
+    poss_moves = {start:search_moves_rec(start) for (start, end) in endpoint_pairs}
+    
 def brute_force(dict_start, tiles):
     """ returns a word + score pair of the highest scoring word that can be made with the 7 tiles (assuming it's the first word)"""
 

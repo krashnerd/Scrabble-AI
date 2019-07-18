@@ -15,6 +15,15 @@ def add_padding(*args):
 		align = '<',
 		width = 15)
 
+def prettyprint(grid):
+	print("\n{}".format("\n".join(['{message:{fill}{align}{width}}'.format(
+		message = '{}: {}'.format(str(index), row),
+		fill = ' ',
+		align = '>',
+		width = 20) for index, row in enumerate(grid)])))
+
+
+
 def string_grid_transpose(rows):
 	return list(zip(*[list(row) for row in rows]))	
 
@@ -65,6 +74,22 @@ class ScoringTester(unittest.TestCase):
 
 		self.assertEqual(game.score_word(new_tiles), 8)
 
+	def test_regex_basic(self):
+		letter_placements = blank_board[:]
+		letter_placements[7] = add_padding(6, 'MAN')
+		prettyprint(["".join(x) for x in zip(*list(map(list, letter_placements)))])
+
+		game = game_from_string(letter_placements)
+		re = bruteforcer.make_regexes(game, 9)
+		for valid in 'EY':
+			pass
+
+
+
+
+
+
+
 
 
 
@@ -74,6 +99,7 @@ class ScoringTester(unittest.TestCase):
 
 
 if __name__ == '__main__':
+
 	unittest.main()
 
 
