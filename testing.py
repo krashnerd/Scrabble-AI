@@ -1,4 +1,4 @@
-import Scrabble, bruteforcer
+import Scrabble, bruteforcer, utils
 import unittest
 from string import ascii_uppercase
 
@@ -15,7 +15,8 @@ def add_padding(*args):
 		align = '<',
 		width = 15)
 
-def prettyprint(grid):
+def prettyprint(g):
+	grid = [x if isinstance(x, str) else "".join(list(x)) for x in g]
 	print("\n{}".format("\n".join(['{message:{fill}{align}{width}}'.format(
 		message = '{}: {}'.format(str(index), row),
 		fill = ' ',
@@ -39,6 +40,8 @@ def game_from_string(letter_placements):
 	return game
 
 class ScoringTester(unittest.TestCase):
+
+
 	def test_basic_row(self):
 		letter_placements = blank_board[:]
 		letter_placements[0] = add_padding(4, 'AAA')
@@ -74,49 +77,75 @@ class ScoringTester(unittest.TestCase):
 
 		self.assertEqual(game.score_word(new_tiles), 8)
 
+	def validate_regex(self, regex, matchall = False, valid = [], invalid = []):
+
+		self.assertEqual(matchall, utils.matches_all(regex))
+
+		for valid_letter in valid:
+			self.assertTrue(regex.match(valid_letter))
+
+		for invalid_letter in invalid:
+			self.assertFalse(regex.match(invalid_letter))
+
+
 	def test_regex_suffix(self):
 		letter_placements = blank_board[:]
 		letter_placements[7] = add_padding(6, 'MAN')
-		letter_placements = zip(*[list(x) for x in letter_placements])
+		letter_placements = utils.grid_transpose(letter_placements)
 
 		game = game_from_string(letter_placements)
 		regs = bruteforcer.make_regexes(game, 9)
+		test_row = 7
 
 		# Testing to be sure it isn't an instance of re.compile('.')
-		self.assertFalse(regs[7].match('0'))
-
-		for valid_letter in 'EY':
-			self.assertTrue(regs[7].match(valid_letter))
-
-		for invalid_letter in 'LFBVZX':
-			self.assertFalse(regs[7].match(invalid_letter))
+		regex = regs[7]
+		self.validate_regex(regex, matchall = False, valid = 'AESY', invalid = "LPUFZ")
 
 	def test_regex_prefix(self):
 		letter_placements = blank_board[:]
 		letter_placements[7] = add_padding(6, 'RAMP')
-		letter_placements = zip(*[list(x) for x in letter_placements])
-		prettyprint(letter_placements)
+		letter_placements = utils.grid_transpose(letter_placements)
+		# prettyprint(letter_placements)
 
 		game = game_from_string(letter_placements)
-		# regs = bruteforcer.make_regexes(game, )
-
-
+		regs = bruteforcer.make_regexes(game, 5)
+		regex = regs[7]
 		# Testing to be sure it isn't an instance of re.compile('.')
-		# self.assertFalse(regs[7].match('0'))
-
-		# for valid_letter in 'EY':
-		# 	self.assertTrue(regs[7].match(valid_letter))
-
-		# for invalid_letter in 'LFBVZX':
-		# 	self.assertFalse(regs[7].match(invalid_letter))
-
-
+		self.validate_regex(regex, matchall = False, valid = "CT", invalid = "BDRFLP")
 
 	def test_regex_infix(self):
-		pass
+		letter_placements = blank_board[:]
+		letter_placements[7] = add_padding(6, 'CR_MP')
+		letter_placements = utils.grid_transpose(letter_placements)
+		# prettyprint(letter_placements)
+		test_row = 8
+
+		game = game_from_string(letter_placements)
+		regs = bruteforcer.make_regexes(game, 8)
+		regex = regs[7]
+		# Testing to be sure it isn't an instance of re.compile('.')
+		self.validate_regex(regex, matchall = False, valid = "AIU", invalid = "ZXCVBNM")
 			
 
 
+	def test_get_all(self):
+		letter_placements = blank_board[:]
+		letter_placements[7] = add_padding(6, 'CR_MP')
+		letter_placements = utils.grid_transpose(letter_placements)
+		game = game_from_string(letter_placements)
+
+		loc = (8, 7)
+		res = bruteforcer.make_regexes(game, 8)
+		self.validate_regex(res[7], matchall = False, valid = "AIU", invalid = "ZXCVBNM")
+		tiles = [Scrabble.Tile(game, x, 1) for x in "AIWNORC"]
+		all_moves = bruteforcer.get_all_row(game, 8, tiles)
+		for x in sorted(all_moves.keys()):
+			print("{}: {}".format(x, all_moves[x]))
+			for word in all_moves[x]:
+				self.assertTrue(7 in range(x, x + len(word)))
+				self.assertTrue(word[7 - x] in "AIU")
+
+	
 
 
 

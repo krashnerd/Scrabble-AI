@@ -41,7 +41,9 @@ class Board:
 
     def __getitem__(self, r, c = None):
         if c is None:
-            return self.grid[r]
+            if isinstance(r, int):
+                return self.grid[r]
+            r, c = r            
         return self.grid[r][c]
 
     def __setitem__(self, ind, value):
@@ -208,10 +210,17 @@ class Board_Space(object):
             return self.tile.letter
 
     def place_tile_on_space(self, tile):
-        assert(self.occupied == False)
-        assert(self.tile == None)
+        if(self.occupied or self.tile):
+            raise OccupiedSpaceError
         self.occupied = True
         self.tile = tile
+
+    def pick_up_tile(self):
+        """ Remove and return tile"""
+        tile = self.tile
+        self.occupied = False
+        self.tile = None
+        return tile
 
     def __repr__(self):
         return ' ' if self.tile == None else self.tile.letter

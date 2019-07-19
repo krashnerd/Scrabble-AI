@@ -1,5 +1,5 @@
 """Brute force best starter word"""
-import csv, string, re
+import csv, string, re, utils
 from functools import reduce
 import numpy as np
 from Scrabble import Scrabble
@@ -71,10 +71,10 @@ def word_endpoints(game, row_ind, restrictions_list, tiles = None):
     occupied_spaces = {c for c in range(15) if game.board.get(row_ind, c).occupied}
 
     bordering_spaces = {c for c in range(15)
-        if (restrictions_list[c] != '.') or
+        if not utils.matches_all(restrictions_list[c]) or
             ({c + 1, c - 1} & occupied_spaces)} - occupied_spaces
-
-    unplayable = {c for c in range(15) if restrictions_list[c] == "[]"}
+    letters = None if tiles is None else "".join([tile.letter for tile in tiles])
+    unplayable = {c for c in range(15) if not restrictions_list[c].match(letters)}
 
     # Count the starting square as a bordering space.
     if row_ind == 7 and occupied_spaces == set():
@@ -87,7 +87,7 @@ def word_endpoints(game, row_ind, restrictions_list, tiles = None):
         if (start - 1) in occupied_spaces or start in unplayable:
             continue
 
-        max_end = start + 1
+        max_end = start
 
         for end in range(start, 15):
 
@@ -99,20 +99,24 @@ def word_endpoints(game, row_ind, restrictions_list, tiles = None):
             if len(wordrange & empty_spaces) > 7 or unplayable & wordrange:
                 break
 
-            if wordrange & bordering_spaces:
-                max_end = end
+            if end in bordering_spaces:
+                pairs.append((start, end))
+                break
 
-        pairs.append(start, max_end)
+            # if wordrange & bordering_spaces:
+            #     must_hit = end - 1
+            #     pairs.append((start, ))
+            #     break
 
     return pairs
 
 def get_all_row(game, row, tiles):
     """Get all possible moves with a given row and set of letters"""
     row_regexes = make_regexes(game, row)
-    endpoint_pairs = word_endpoints(game, row, poss_letters)
+    endpoint_pairs = word_endpoints(game, row, row_regexes, tiles)
     board = game.board
 
-    def search_moves_rec(col, _dict = game.dict, tiles_left = tiles[:], word = ""):
+    def search_moves_rec(col, min_end, _dict = game.dictionary, tiles_left = tiles[:], word = ""):
         """Backtracking search from a start point."""
          
         # Base case 1: End of column
@@ -123,22 +127,19 @@ def get_all_row(game, row, tiles):
         # Recursive case 1: Tile is occupied. Move to next.
         letter = game.board[loc].get_letter()
 
-
         if letter:
             if letter not in _dict:
                 return []
-            return search_moves_rec(col + 1, _dict[letter], tiles_left, word + letter)
+            return search_moves_rec(col + 1, min_end, _dict[letter], tiles_left, word + letter)
 
 
         results = []
 
         
-        
-        
         # Recursive case 2: Nonempty square
 
         # If it's a complete word and some tiles have been played, add to the results list.
-        if '$' in _dict and len(tiles_left) < len(tiles):
+        if '$' in _dict and len(tiles_left) < len(tiles) and col > min_end:
             results.append(word)
 
 
@@ -147,12 +148,14 @@ def get_all_row(game, row, tiles):
             letter = tile.letter
             # If possible word following, and the letter can be played:
             if letter in _dict and row_regexes[col].match(letter):
-                removed = [x for x in tiles if x is not tile]
-                results.concat(search_moves_rec(col + 1 , _dict = _dict[letter], tiles_left = removed, word = word + letter))
+                
+                removed = [x for x in tiles_left if x is not tile]
+                results.extend(search_moves_rec(col + 1, min_end, _dict = _dict[letter], tiles_left = removed, word = word + letter))
 
         return results
 
-    return {start:search_moves_rec(start) for (start, end) in endpoint_pairs}
+    print(endpoint_pairs)
+    return {start:search_moves_rec(start, end) for (start, end) in endpoint_pairs}
     
 def brute_force(dict_start, tiles):
     """ returns a word + score pair of the highest scoring word that can be made with the 7 tiles (assuming it's the first word)"""
