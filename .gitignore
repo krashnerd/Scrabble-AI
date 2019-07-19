@@ -101,3 +101,4 @@ ENV/
 # dictionaries
 dict-sample*
 scrap.py
+points.txt

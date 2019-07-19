@@ -116,7 +116,7 @@ def get_all_row(game, row, tiles):
     endpoint_pairs = word_endpoints(game, row, row_regexes, tiles)
     board = game.board
 
-    def search_moves_rec(col, min_end, _dict = game.dictionary, tiles_left = tiles[:], word = ""):
+    def search_moves_rec(col, min_end, _dict = game.dictionary, tiles_left = tiles[:], word = "", move = []):
         """Backtracking search from a start point."""
          
         # Base case 1: End of column
@@ -130,27 +130,27 @@ def get_all_row(game, row, tiles):
         if letter:
             if letter not in _dict:
                 return []
-            return search_moves_rec(col + 1, min_end, _dict[letter], tiles_left, word + letter)
+            return search_moves_rec(col + 1, min_end, _dict[letter], tiles_left, word + letter, move)
 
 
-        results = []
 
         
         # Recursive case 2: Nonempty square
+        results = []
 
         # If it's a complete word and some tiles have been played, add to the results list.
         if '$' in _dict and len(tiles_left) < len(tiles) and col > min_end:
-            results.append(word)
+            results.append(word, tiles_left[:])
 
-
-        
         for tile in tiles_left:
             letter = tile.letter
             # If possible word following, and the letter can be played:
             if letter in _dict and row_regexes[col].match(letter):
                 
-                removed = [x for x in tiles_left if x is not tile]
-                results.extend(search_moves_rec(col + 1, min_end, _dict = _dict[letter], tiles_left = removed, word = word + letter))
+                new_tiles_left = [x for x in tiles_left if x is not tile]
+                new_move = move[:]
+                new_move.append(((row, col), tile))
+                results.extend(search_moves_rec(col + 1, min_end, _dict[letter], new_tiles_left, word + letter, new_move))
 
         return results
 

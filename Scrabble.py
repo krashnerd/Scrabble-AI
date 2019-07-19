@@ -1,8 +1,72 @@
-import build_dictionary
+import json, string
+import build_dictionary, consts
+
 from numpy import random
 from Board import Board
+from collections import OrderedDict
+
+class GameError(Exception):
+	pass
+
+class TileNotFoundError(GameError):
+	def __init__(self, expression, message):
+		self.expression = expression
+		self.message = "Tile not found in player rack"
+
+class Rack():
+	def __init__(self, game, player):
+		self.game = game
+		self.player = player
+
+		self.tiles = []
+
+	def add_tiles(self, tiles):
+		self.tiles.extend(tiles)
+
+	def has_tiles(self, move):
+		for tile, position in move:
+			if tile not in self:
+				return False
+
+		return True
+
+	def make_move(self, move):
+		try:
+			for tile, _ in move:
+				self.tiles.remove(tile)
+		
+		except ValueError:
+			raise TileNotFoundError
+
+		else:
+			self.add_tiles(game.bag.pull_tiles(self.tiles_needed()))
+
+
+	def tiles_needed(self):
+		return 7 - len(self.tiles)
+
+	def __contains__(self, item):
+		return item in self.tiles
+
+
+
+class Player:
+	def __init__(self, game):
+		self.game = game
+		self.rack = Rack(self.game, self)
+
+	def make_move(self):
+		pass
+
+class HumanPlayer(Player):
+	def __init__(self, game):
+		Player.__init__(game)
+
+
+
+
 class Scrabble(object):
-	def __init__(self):
+	def __init__(self, num_players = 2):
 		self.letter_dist = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
 		points = {1:"AEIOULNSTR",2:"DG",3:"BCMP",4:"FHVWY",5:"K",8:"JX",10:"QZ"}
 		self.points = dict() # dictionary for point values of each letter
@@ -10,11 +74,20 @@ class Scrabble(object):
 			for letter in letters:
 				self.points[letter] = num
 
+		self.points2 = OrderedDict()
+		for ind, letter in enumerate(string.ascii_uppercase):
+			self.points2[letter] = self.points[letter]
+
+		output_str = json.dumps(self.points2)
+		with open("points.txt", "w") as outfile:
+			outfile.write(output_str)
+			exit(0)
 
 		self.bag = Bag(self)
 		self.board = Board(self)
 		self.dictionary = build_dictionary.get_dictionary("dictionary/dict.bytesIO")
 		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
+
 
 	def score(word):
 		points = 0
@@ -56,17 +129,18 @@ class Scrabble(object):
 	def print_board(self):
 		self.board.print_grid()
 
+def NotEnoughTilesError(GameError):
+	def __init__(self, expression, message):
+		self.message = "Too few tiles to swap"
+
 class Bag(object):
 	def __init__(self, game):
 		self.game = game
 		self.tiles = []
-		points = {1:"AEIOULNSTR",2:"DG",3:"BCMP",4:"FHVWY",5:"K",8:"JX",10:"QZ"}
+		for letter, points, amount in consts.letter_points_amount:
+			for _ in range(amount):
+				self.tiles.append(Tile(game = self.game, letter = letter, points = points))
 
-		for pointVal in points.keys():
-			for letter in points[pointVal]:
-				letter_amt = self.game.letter_dist[ord(letter) - ord("A")]
-				for i in range(letter_amt):
-					self.tiles.append(Tile(self.game, letter, pointVal))
 		random.shuffle(self.tiles)
 
 	def pull_tiles(self, num_tiles = 1):
@@ -75,16 +149,22 @@ class Bag(object):
 
 	def swap_tiles(self, tiles_to_swap):
 		"""Given a list of tiles to swap, gets the same number of tiles from the bag"""
+		
+		if len(self) < 7:
+			raise NotEnoughTilesError
 
 		new_tiles = self.pull_tiles(len(tiles_to_swap))
-		self.tiles += tiles_to_swap
+		self.tiles.extend(tiles_to_swap)
 		return new_tiles
+
+	def __len__(self):
+		return len(self.tiles)
 
 class Tile(object):
 	def __init__(self, game, letter, points):
 		self.game = game
-		self.points = points
 		self.letter = letter
+		self.points = points
 
 	def __repr__(self):
 		return self.letter

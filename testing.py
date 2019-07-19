@@ -136,16 +136,20 @@ class ScoringTester(unittest.TestCase):
 
 		loc = (8, 7)
 		res = bruteforcer.make_regexes(game, 8)
-		self.validate_regex(res[7], matchall = False, valid = "AIU", invalid = "ZXCVBNM")
+
 		tiles = [Scrabble.Tile(game, x, 1) for x in "AIWNORC"]
 		all_moves = bruteforcer.get_all_row(game, 8, tiles)
 		for x in sorted(all_moves.keys()):
 			print("{}: {}".format(x, all_moves[x]))
-			for word in all_moves[x]:
+			for word, tiles_left in all_moves[x]:
 				self.assertTrue(7 in range(x, x + len(word)))
 				self.assertTrue(word[7 - x] in "AIU")
 
-	
+
+
+
+
+
 
 
 
