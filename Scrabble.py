@@ -1,4 +1,4 @@
-import json, string
+import json, string, copy
 import build_dictionary, consts
 
 from numpy import random
@@ -13,15 +13,18 @@ class TileNotFoundError(GameError):
 		self.expression = expression
 		self.message = "Tile not found in player rack"
 
-class Rack():
-	def __init__(self, game, player):
+# class Move():
+# 	def __init__(self, start_loc, end_loc, word):
+# 		self.start_loc = start_loc
+# 		self.word = word
+
+class Rack(list):
+	def __init__(self, game, items = []):
 		self.game = game
-		self.player = player
+		super().__init__(items)
 
-		self.tiles = []
-
-	def add_tiles(self, tiles):
-		self.tiles.extend(tiles)
+	def refill(self):
+		self.extend(self.game.bag.pull_tiles(self.tiles_needed()))
 
 	def has_tiles(self, move):
 		for tile, position in move:
@@ -30,30 +33,36 @@ class Rack():
 
 		return True
 
-	def make_move(self, move):
+	def remove_letter(self, letter):
+		for tile in self:
+			if tile.letter == letter:
+				to_remove = tile
+				break
+		self.remove(to_remove)
+
+	def remove_tiles(self, move):
+
+		if isinstance(move, TileExchange):
+			pass
 		try:
 			for tile, _ in move:
-				self.tiles.remove(tile)
+				self.remove(tile)
 		
 		except ValueError:
 			raise TileNotFoundError
 
 		else:
-			self.add_tiles(game.bag.pull_tiles(self.tiles_needed()))
-
+			self.refill()
 
 	def tiles_needed(self):
 		return 7 - len(self.tiles)
 
-	def __contains__(self, item):
-		return item in self.tiles
-
-
 
 class Player:
-	def __init__(self, game):
+	def __init__(self, game = None):
 		self.game = game
-		self.rack = Rack(self.game, self)
+		self.rack = Rack(self.game)
+		self.score = 0
 
 	def make_move(self):
 		pass
@@ -62,26 +71,14 @@ class HumanPlayer(Player):
 	def __init__(self, game):
 		Player.__init__(game)
 
-
-
-
 class Scrabble(object):
-	def __init__(self, num_players = 2):
+	def __init__(self, players = [Player(), Player()]):
 		self.letter_dist = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
 		points = {1:"AEIOULNSTR",2:"DG",3:"BCMP",4:"FHVWY",5:"K",8:"JX",10:"QZ"}
-		self.points = dict() # dictionary for point values of each letter
-		for num, letters in points.items():
-			for letter in letters:
-				self.points[letter] = num
-
-		self.points2 = OrderedDict()
-		for ind, letter in enumerate(string.ascii_uppercase):
-			self.points2[letter] = self.points[letter]
-
-		output_str = json.dumps(self.points2)
-		with open("points.txt", "w") as outfile:
-			outfile.write(output_str)
-			exit(0)
+		self.players = [Player(self), None, None, None]
+		self.last_move_score = 0
+		self.curr_player_index = 0
+		self.change_turn()
 
 		self.bag = Bag(self)
 		self.board = Board(self)
@@ -100,7 +97,7 @@ class Scrabble(object):
 	def score_word(self, locs):
 		return self.board.score_word(locs)
 
-	def return_hand(self, num_tiles=7):
+	def return_hand(self, num_tiles = 7):
 		return self.bag.pull_tiles(num_tiles)
 	# 	hand = random.choice(self.bag.tiles, 7, replace = False)
 
@@ -128,6 +125,29 @@ class Scrabble(object):
 
 	def print_board(self):
 		self.board.print_grid()
+
+	def change_turn(self):
+		self.curr_player_index = (self.curr_player_index + 1) % len(self.players)
+		self.current_player = self.players[self.curr_player_index]
+		if self.current_player is None:
+			self.change_turn()
+
+	def apply_move(self, move):
+		new = copy.deepcopy(self)
+		new_locs = [loc for _, loc in move]
+		player = new.current_player
+		for tile, loc in move:
+			new.board[loc] = tile
+			player.rack.remove_letter(tile.letter)
+
+		score = new.score_word(new_locs)
+		player.score += score
+		new.change_turn()
+		new.last_move_score = score
+		return new
+
+	
+
 
 def NotEnoughTilesError(GameError):
 	def __init__(self, expression, message):
@@ -161,10 +181,14 @@ class Bag(object):
 		return len(self.tiles)
 
 class Tile(object):
-	def __init__(self, game, letter, points):
+	def __init__(self, game, letter, points = None):
 		self.game = game
 		self.letter = letter
-		self.points = points
+		if points is not None:
+			self.points = points
+		else:
+			_points, _ = consts.lookup_points_amount[letter]
+			self.points = _points
 
 	def __repr__(self):
 		return self.letter

@@ -34,7 +34,7 @@ def game_from_string(letter_placements):
 	for r_ind, r_val in enumerate(letter_placements):
 		for c_ind, letter in enumerate(r_val):
 			if letter in ascii_uppercase:
-				new_tile = Scrabble.Tile(game, letter, game.points[letter])
+				new_tile = Scrabble.Tile(game, letter)
 				board[r_ind, c_ind] = new_tile
 
 	return game
@@ -144,6 +144,15 @@ class ScoringTester(unittest.TestCase):
 			for word, tiles_left in all_moves[x]:
 				self.assertTrue(7 in range(x, x + len(word)))
 				self.assertTrue(word[7 - x] in "AIU")
+
+	def test_highest_scoring_move(self):
+		game = game_from_string(blank_board)
+		game.current_player.rack.extend([Scrabble.Tile(game, x) for x in "LOOPERS"])
+		move = bruteforcer.highest_scoring_move(game)
+		applied = game.apply_move(move)
+		print(applied.board)
+		print("score: {}".format(applied.last_move_score))
+
 
 
 

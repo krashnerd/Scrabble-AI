@@ -140,7 +140,7 @@ def get_all_row(game, row, tiles):
 
         # If it's a complete word and some tiles have been played, add to the results list.
         if '$' in _dict and len(tiles_left) < len(tiles) and col > min_end:
-            results.append(word, tiles_left[:])
+            results.append(move)
 
         for tile in tiles_left:
             letter = tile.letter
@@ -148,16 +148,14 @@ def get_all_row(game, row, tiles):
             if letter in _dict and row_regexes[col].match(letter):
                 
                 new_tiles_left = [x for x in tiles_left if x is not tile]
-                new_move = move[:]
-                new_move.append(((row, col), tile))
+                new_move = move + [(tile, (row, col))]
                 results.extend(search_moves_rec(col + 1, min_end, _dict[letter], new_tiles_left, word + letter, new_move))
 
         return results
 
-    print(endpoint_pairs)
-    return {start:search_moves_rec(start, end) for (start, end) in endpoint_pairs}
-    
-def brute_force(dict_start, tiles):
+    return [move for (start, end) in endpoint_pairs for move in search_moves_rec(start, end) ]
+
+def single_word_brute_force(dict_start, tiles):
     """ returns a word + score pair of the highest scoring word that can be made with the 7 tiles (assuming it's the first word)"""
 
     curr_words = [[]] if '$' in dict_start else []
@@ -199,7 +197,7 @@ def brute_force(dict_start, tiles):
 
     return curr_words
 
-def bruteforce_test(game):
+def single_word_bruteforce_test(game):
     assert False
     hand = game.return_hand()
     best_words = brute_force(game.dictionary, hand)
@@ -226,6 +224,15 @@ def make_dataset():
             #for word in best_words:
             
     # print("Best words: %s - %d points." % (", ".join([tile.letter for best_word in best_words for tile in best_word]), score_firstword(best_word)))
+
+def all_moves(game):
+    moves = []
+    for row in range(15):
+        moves.extend(get_all_row(game, row, game.current_player.rack))
+    return moves
+
+def highest_scoring_move(game):
+    return max(all_moves(game), key = lambda move:game.apply_move(move).last_move_score)
 
 
 def main():

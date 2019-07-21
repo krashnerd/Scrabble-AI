@@ -22,22 +22,17 @@ class Board:
                     for y0,dy in [(0,1),(14,-1)]
                         for mx,my in [(5,1),(5,5),(1,5)]]
 
-        self.grid = [[] for _ in range(15)]
-        for r in range(15):
-            for c in range(15):
-                _bonusType = None
-                for pair in [(_DLS,"L2"),(_DWS,"W2"),(_TWS,"W3"),(_TLS,"L3")]:
-                    coord_list, poss_bonus = pair
-                    if (r, c) in coord_list:
-                        _bonusType = poss_bonus
+        self.grid = [[Board_Space(self.game, self, (r, c), None) for r in range(15)] for c in range(15)]
+        self.vert_grid = [[self.grid[c][r] for r in range(15)] for c in range(15)]
+        _bonusType = None
+        
+        for coords_lst, poss_bonus in [(_DLS,"L2"),(_DWS,"W2"),(_TWS,"W3"),(_TLS,"L3")]:
+            for coords in coords_lst:
+                self[coords].set_bonus(poss_bonus)
 
-                self.grid[r].append(Board_Space(self.game, self, (r, c), _bonusType))
 
     def place_tile_on_board(self, tile, coords):
-        if tile is None:
-            return
-        r, c = coords
-        self.grid[r][c].place_tile_on_space(tile)
+        self[coords].place_tile_on_space(tile)
 
     def __getitem__(self, r, c = None):
         if c is None:
@@ -72,10 +67,10 @@ class Board:
         return self.grid[r][c]
 
     def get_letter(self, r,c = None):
-        if c==None:
-            r,c = r
-        space = self.grid[r][c]
-        return space.tile.letter if space.occupied else None
+        try:
+            self[r, c].tile.letter
+        except AttributeError:
+            return 
 
     def score_word(self, new_tile_locs_preprocess):
         for r, c in new_tile_locs_preprocess:
@@ -102,8 +97,6 @@ class Board:
             word_points = 0
             word_mult = 1
 
-
-
             for r, c in word_locs:
                 space = board[r][c]
                 tile = space.tile
@@ -111,13 +104,8 @@ class Board:
 
                 # Apply bonus
                 if (r, c) in new_tile_locs:
-                    bonus = space.bonusType
-                    if bonus is not None:
-                        bonus_num = int(bonus[1])
-                        if bonus[0] == "W":
-                            word_mult *= bonus_num
-                        else:
-                            letter_mult = bonus_num
+                    word_mult *= space.wordBonus
+                    letter_mult *= space.letterBonus
 
                 word_points += letter_mult * tile.points
 
@@ -169,7 +157,11 @@ class Board:
 
 
         # -------- Return the score of each word with length > 1 ---------
-        return sum([score_single_word(word) for word in all_words if len(word) > 1])
+        base_score = sum([score_single_word(word) for word in all_words if len(word) > 1])
+        bonus_score = 50 if len(new_tile_locs) == 7 else 0
+        return base_score + bonus_score
+
+
 
 class Board_Space(object):
 
@@ -195,12 +187,6 @@ class Board_Space(object):
         #Parsing bonus amount
         self.wordBonus = 1 
         self.letterBonus = 1
-        if(bonusType != None):
-            bonusAmt = int(bonusType[1])
-            if(bonusType [0] == "L"):
-                self.letterBonus = bonusAmt
-            else:
-                self.wordBonus = bonusAmt
 
     def get_letter(self):
         if not self.occupied:
@@ -208,6 +194,15 @@ class Board_Space(object):
 
         else:
             return self.tile.letter
+
+    def set_bonus(self, bonusType):
+        self.bonusType = bonusType
+        if(bonusType != None):
+            bonusAmt = int(bonusType[1])
+            if(bonusType [0] == "L"):
+                self.letterBonus = bonusAmt
+            else:
+                self.wordBonus = bonusAmt
 
     def place_tile_on_space(self, tile):
         if(self.occupied or self.tile):
