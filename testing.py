@@ -117,12 +117,20 @@ class ScoringTester(unittest.TestCase):
 		letter_placements = blank_board[:]
 		letter_placements[7] = add_padding(6, 'CR_MP')
 		letter_placements = utils.grid_transpose(letter_placements)
-		# prettyprint(letter_placements)
+		prettyprint(letter_placements)
 		test_row = 8
 
 		game = game_from_string(letter_placements)
+		print(game.board)
 		regs = bruteforcer.make_regexes(game, 8)
 		regex = regs[7]
+		one_non_matches_all = False
+		for reg in regs:
+			if not reg.match('0'):
+				one_non_matches_all = True
+
+		self.assertTrue(one_non_matches_all)
+
 		# Testing to be sure it isn't an instance of re.compile('.')
 		self.validate_regex(regex, matchall = False, valid = "AIU", invalid = "ZXCVBNM")
 			
@@ -135,15 +143,14 @@ class ScoringTester(unittest.TestCase):
 		game = game_from_string(letter_placements)
 
 		loc = (8, 7)
-		res = bruteforcer.make_regexes(game, 8)
+		res = bruteforcer.make_regexes(game, 8, True)
 
-		tiles = [Scrabble.Tile(game, x, 1) for x in "AIWNORC"]
-		all_moves = bruteforcer.get_all_row(game, 8, tiles)
-		for x in sorted(all_moves.keys()):
-			print("{}: {}".format(x, all_moves[x]))
-			for word, tiles_left in all_moves[x]:
-				self.assertTrue(7 in range(x, x + len(word)))
-				self.assertTrue(word[7 - x] in "AIU")
+		game.current_player.rack.extend([Scrabble.Tile(game, x) for x in "LOOPERS"])
+		all_moves = bruteforcer.get_all_row(game, 8, game.current_player.rack)
+		for move in all_moves:
+			applied = game.apply_move(move)
+			self.assertTrue(applied.board[loc].occupied)
+			self.assertTrue(applied.board[loc].letter in "AIU")
 
 	def test_highest_scoring_move(self):
 		game = game_from_string(blank_board)
@@ -153,9 +160,7 @@ class ScoringTester(unittest.TestCase):
 		print(applied.board)
 		print("score: {}".format(applied.last_move_score))
 
-
-
-
+	
 
 
 

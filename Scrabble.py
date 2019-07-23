@@ -9,7 +9,8 @@ class GameError(Exception):
 	pass
 
 class TileNotFoundError(GameError):
-	def __init__(self, expression, message):
+	def __init__(self, *args, **kwargs):
+		Exception.__init__(self, *args, **kwargs)
 		self.expression = expression
 		self.message = "Tile not found in player rack"
 
@@ -38,7 +39,10 @@ class Rack(list):
 			if tile.letter == letter:
 				to_remove = tile
 				break
-		self.remove(to_remove)
+		try:
+			self.remove(to_remove)
+		except UnboundLocalError:
+			raise TileNotFoundError
 
 	def remove_tiles(self, move):
 
@@ -55,36 +59,29 @@ class Rack(list):
 			self.refill()
 
 	def tiles_needed(self):
-		return 7 - len(self.tiles)
+		return 7 - len(self)
 
 
-class Player:
+class InternalPlayer:
 	def __init__(self, game = None):
 		self.game = game
 		self.rack = Rack(self.game)
 		self.score = 0
 
-	def make_move(self):
-		pass
-
-class HumanPlayer(Player):
-	def __init__(self, game):
-		Player.__init__(game)
-
 class Scrabble(object):
-	def __init__(self, players = [Player(), Player()]):
+	def __init__(self, num_players = 2):
 		self.letter_dist = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
 		points = {1:"AEIOULNSTR",2:"DG",3:"BCMP",4:"FHVWY",5:"K",8:"JX",10:"QZ"}
-		self.players = [Player(self), None, None, None]
-		self.last_move_score = 0
-		self.curr_player_index = 0
-		self.change_turn()
+		self.players = [InternalPlayer(self) for _ in range(num_players)]
 
+		self.last_move_score = 0
+		self.current_player_index = 0
+		self.change_turn()
+		self.winner = None
 		self.bag = Bag(self)
 		self.board = Board(self)
 		self.dictionary = build_dictionary.get_dictionary("dictionary/dict.bytesIO")
 		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
-
 
 	def score(word):
 		points = 0
@@ -95,6 +92,8 @@ class Scrabble(object):
 		return points
 
 	def score_word(self, locs):
+		if not locs:
+			return 0
 		return self.board.score_word(locs)
 
 	def return_hand(self, num_tiles = 7):
@@ -122,29 +121,45 @@ class Scrabble(object):
 
 			return node
 
+	def end_game(self):
+		best_score = max([player.score for player in self.players])
+		for i, player in enumerate(self.players):
+			print("Player {}: {}".format(i, player.score))
+			if player.score == best_score:
+				self.winner = i
+
+	def get_winner(self):
+		return self.winner
+
+
 
 	def print_board(self):
 		self.board.print_grid()
 
 	def change_turn(self):
-		self.curr_player_index = (self.curr_player_index + 1) % len(self.players)
-		self.current_player = self.players[self.curr_player_index]
+		self.current_player_index = (self.current_player_index + 1) % len(self.players)
+		self.current_player = self.players[self.current_player_index]
 		if self.current_player is None:
 			self.change_turn()
 
 	def apply_move(self, move):
+		print("\n".join(["".join([tile.letter for tile in player.rack]) for player in self.players]))
 		new = copy.deepcopy(self)
 		new_locs = [loc for _, loc in move]
 		player = new.current_player
 		for tile, loc in move:
 			new.board[loc] = tile
 			player.rack.remove_letter(tile.letter)
+		player.rack.refill()
 
 		score = new.score_word(new_locs)
 		player.score += score
 		new.change_turn()
 		new.last_move_score = score
 		return new
+
+	def test_move(self, move):
+		return self.board.check_move_score(move)
 
 	
 
@@ -165,6 +180,8 @@ class Bag(object):
 
 	def pull_tiles(self, num_tiles = 1):
 		pulled_tiles, self.tiles = (self.tiles[:num_tiles], self.tiles[num_tiles:])
+		if not self.tiles:
+			self.game.end_game()
 		return pulled_tiles
 
 	def swap_tiles(self, tiles_to_swap):

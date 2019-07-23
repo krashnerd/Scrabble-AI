@@ -1,3 +1,7 @@
+class OccupiedSpaceError(Exception):
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
+
 class Board:
 
     """docstring for S_Board"""
@@ -41,8 +45,11 @@ class Board:
             r, c = r            
         return self.grid[r][c]
 
-    def __setitem__(self, ind, value):
-        self.place_tile_on_board(value, ind)
+    def __setitem__(self, ind, tile):
+        if tile:
+            self.place_tile_on_board(tile, ind)
+        else:
+            self[ind].pick_up_tile()
 
     def __repr__(self):
         result = ""
@@ -68,7 +75,7 @@ class Board:
 
     def get_letter(self, r,c = None):
         try:
-            self[r, c].tile.letter
+            return self[r, c].tile.letter
         except AttributeError:
             return 
 
@@ -161,6 +168,24 @@ class Board:
         bonus_score = 50 if len(new_tile_locs) == 7 else 0
         return base_score + bonus_score
 
+    def check_move_score(self, move):
+        locs = [loc for _, loc in move]
+
+        for tile, loc in move: 
+            if self[loc].occupied:
+                raise OccupiedSpaceError("Board:{}\nMove:{}".format(str(self), loc))
+            self[loc] = tile
+
+        score = self.score_word(locs)
+
+        for loc in locs:
+            self[loc] = None
+
+        return score
+
+
+
+
 
 
 class Board_Space(object):
@@ -203,10 +228,16 @@ class Board_Space(object):
                 self.letterBonus = bonusAmt
             else:
                 self.wordBonus = bonusAmt
+        self.printedBonusType = ("%sx%s" % (bonusType[0],bonusType[1]) if self.bonusType is not None else "  ")
 
+        if self.loc == (7,7):
+            self.printedBonusType = " * "
     def place_tile_on_space(self, tile):
+        if tile is None:
+            self.pick_up_tile()
+            return
         if(self.occupied or self.tile):
-            raise OccupiedSpaceError
+            raise OccupiedSpaceError("Space {} is already occupied".format(self.loc))
         self.occupied = True
         self.tile = tile
 

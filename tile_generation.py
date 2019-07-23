@@ -7,8 +7,7 @@ distribution = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
 
 bag = dict()
 
-def tile_maker_fn(self):
-
+# def tile_maker_fn(self):
 
 
 class Tile(object):

@@ -16,7 +16,7 @@ def score_firstword(tiles):
         
     return ((bonus_score + sum(_tile.points for _tile in tiles)) * 2) + (50 if len(tiles) == 7 else 0)
 
-def get_tile_regex(coords, game):
+def get_tile_regex(coords, game, verbose = False):
     """ Given a coordinate, find what letters 
     can be put in said coordinate assuming that only one letter is going in the column
     (word is being placed horizontally)"""
@@ -29,10 +29,15 @@ def get_tile_regex(coords, game):
 
     col = "{}?{}".format(letters[:r], letters[r+1:])
     chunks = col.split("_")
+    if verbose:
+        print(col, chunks)
+        print(game.board)
     chunk = None
     # Get the 
     for possible_chunk in chunks:
         if "?" in possible_chunk:
+            if verbose:
+                    print(chunk)
             chunk = possible_chunk
             break
 
@@ -45,9 +50,9 @@ def get_tile_regex(coords, game):
         if game.check_word(word):
             possible += letter
 
-    return re.compile("[{}]".format(possible))
+    return re.compile("[m{}]".format(possible))
 
-def make_regexes(game, row_ind):
+def make_regexes(game, row_ind, verbose = False):
     """List of regexes for each square in the row, restricting based on the column"""
     possibilities = ['' for _ in range(15)]
     board = game.board
@@ -56,9 +61,9 @@ def make_regexes(game, row_ind):
         if space.occupied:
             possibilities[col_ind] = re.compile("[{}]".format(space.tile.letter))
         else:
-            possibilities[col_ind] = get_tile_regex((row_ind, col_ind), game)
+            possibilities[col_ind] = get_tile_regex((row_ind, col_ind), game, verbose)
 
-    return [re.compile(x) for x in possibilities]
+    return possibilities[:]
 
 def word_endpoints(game, row_ind, restrictions_list, tiles = None):
     """Given a certain row in a certain game, as well as
@@ -148,7 +153,7 @@ def get_all_row(game, row, tiles):
             if letter in _dict and row_regexes[col].match(letter):
                 
                 new_tiles_left = [x for x in tiles_left if x is not tile]
-                new_move = move + [(tile, (row, col))]
+                new_move = move + [(tile, board[row, col].loc)]
                 results.extend(search_moves_rec(col + 1, min_end, _dict[letter], new_tiles_left, word + letter, new_move))
 
         return results
@@ -232,7 +237,19 @@ def all_moves(game):
     return moves
 
 def highest_scoring_move(game):
-    return max(all_moves(game), key = lambda move:game.apply_move(move).last_move_score)
+    moves = all_moves(game)
+    if not moves:
+        return []
+    num_moves = len(moves)
+    best_score = 0
+    best_move = None
+    for progress, move in enumerate(moves):
+        score = game.test_move(move)
+        if score > best_score:
+            best_move = move
+            best_score = score
+
+    return max(all_moves(game), key = lambda move:game.test_move(move))
 
 
 def main():
