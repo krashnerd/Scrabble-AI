@@ -131,15 +131,11 @@ def get_all_row(game, row, tiles):
 
         # Recursive case 1: Tile is occupied. Move to next.
         letter = game.board[loc].get_letter()
-
         if letter:
             if letter not in _dict:
                 return []
             return search_moves_rec(col + 1, min_end, _dict[letter], tiles_left, word + letter, move)
-
-
-
-        
+ 
         # Recursive case 2: Nonempty square
         results = []
 
@@ -153,66 +149,12 @@ def get_all_row(game, row, tiles):
             if letter in _dict and row_regexes[col].match(letter):
                 
                 new_tiles_left = [x for x in tiles_left if x is not tile]
-                new_move = move + [(tile, board[row, col].loc)]
+                new_move = move + [(tile, board[loc].loc)]
                 results.extend(search_moves_rec(col + 1, min_end, _dict[letter], new_tiles_left, word + letter, new_move))
 
         return results
 
     return [move for (start, end) in endpoint_pairs for move in search_moves_rec(start, end) ]
-
-def single_word_brute_force(dict_start, tiles):
-    """ returns a word + score pair of the highest scoring word that can be made with the 7 tiles (assuming it's the first word)"""
-
-    curr_words = [[]] if '$' in dict_start else []
-    if(len(tiles) == 0):
-        return curr_words
-
-    best_score = 0
-    can_advance = lambda tile, _dict: tile.letter in _dict
-
-    letters_left = [tile.letter for tile in tiles]
-
-    for idx, tile in enumerate(tiles):
-
-        # Next letter is in the dictionary and the tile hasn't already been checked
-        if tile.letter in dict_start and (idx == 0 or tile.letter not in [prev.letter for prev in tiles[:idx]]):
-
-            # list of all remaining tiles.
-            remaining_tiles = [_tile for _tile in tiles if _tile is not tile]
-            
-            #Recursive call
-            best_possible_followers = brute_force(dict_start[tile.letter], remaining_tiles)
-
-            #If there was a word
-            if len(best_possible_followers) > 0:
-
-                local_max_hands = [([tile] + follower if follower != [] else [tile]) for follower in best_possible_followers]
-                # for hand in local_max_hands:
-                #   if len(hand) == 7:
-                #       print('Found bingo: %s' % ''.join([t.letter for t in hand]))
-
-                curr_score = score_firstword(local_max_hands[0])
-
-                if curr_score >= best_score:
-                    if curr_score > best_score:
-                        curr_words = []
-                    curr_words += local_max_hands
-                    best_score = curr_score
-
-
-    return curr_words
-
-def single_word_bruteforce_test(game):
-    assert False
-    hand = game.return_hand()
-    best_words = brute_force(game.dictionary, hand)
-    # print(best_words)
-    #for word in best_words:
-    print ("Best word%s: %s (%d points)." % (
-        "s" if len(best_words) > 1 else "",
-        ",".join(["".join([tile.letter for tile in word]) for word in best_words]),
-        score_firstword(best_words[0])))
-    # print("Best words: %s - %d points." % (", ".join([tile.letter for best_word in best_words for tile in best_word]), score_firstword(best_word)))
 
 def make_dataset():
     with open('starting_hands_training_data.csv', 'w') as csvfile:
@@ -231,25 +173,32 @@ def make_dataset():
     # print("Best words: %s - %d points." % (", ".join([tile.letter for best_word in best_words for tile in best_word]), score_firstword(best_word)))
 
 def all_moves(game):
+    orig = game.board.grid[:]
     moves = []
-    for row in range(15):
-        moves.extend(get_all_row(game, row, game.current_player.rack))
+    for _ in range(2):
+        for row in range(15):
+            moves.extend(get_all_row(game, row, game.current_player.rack)) 
+        game.board.transpose()
+    for r in range(15):
+        for c in range(15):
+            assert orig[r][c] == game.board.grid[r][c]
     return moves
 
 def highest_scoring_move(game):
     moves = all_moves(game)
+
     if not moves:
         return []
-    num_moves = len(moves)
-    best_score = 0
-    best_move = None
-    for progress, move in enumerate(moves):
-        score = game.test_move(move)
-        if score > best_score:
-            best_move = move
-            best_score = score
+    # num_moves = len(moves)
+    # best_score = 0
+    # best_move = None
+    # for progress, move in enumerate(moves):
+    #     score = game.test_move(move)
+    #     if score > best_score:
+    #         best_move = move
+    #         best_score = score
 
-    return max(all_moves(game), key = lambda move:game.test_move(move))
+    return max(moves, key = lambda move:game.test_move(move))
 
 
 def main():

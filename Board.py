@@ -1,3 +1,5 @@
+import utils
+
 class OccupiedSpaceError(Exception):
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
@@ -26,8 +28,8 @@ class Board:
                     for y0,dy in [(0,1),(14,-1)]
                         for mx,my in [(5,1),(5,5),(1,5)]]
 
-        self.grid = [[Board_Space(self.game, self, (r, c), None) for r in range(15)] for c in range(15)]
-        self.vert_grid = [[self.grid[c][r] for r in range(15)] for c in range(15)]
+        self.grid = [[Board_Space(self.game, self, (r, c), None) for c in range(15)] for r in range(15)]
+        # self.vert_grid = [[self.grid[c][r] for r in range(15)] for c in range(15)]
         _bonusType = None
         
         for coords_lst, poss_bonus in [(_DLS,"L2"),(_DWS,"W2"),(_TWS,"W3"),(_TLS,"L3")]:
@@ -46,6 +48,9 @@ class Board:
         return self.grid[r][c]
 
     def __setitem__(self, ind, tile):
+        if ind != self[ind].loc:
+            print("Given: {} which is index of tile at {}".format(ind, self[ind].loc))
+        assert ind == self[ind].loc
         if tile:
             self.place_tile_on_board(tile, ind)
         else:
@@ -67,6 +72,12 @@ class Board:
 
                 result += ("|%s|\n" % "|".join(map(printedRowFn, row)))
         return result
+
+    def transpose(self):
+        print("Transposing")
+
+        self.grid = utils.grid_transpose(self.grid)
+
 
     def get(self, r,c = None):
         if c == None:
@@ -169,11 +180,14 @@ class Board:
         return base_score + bonus_score
 
     def check_move_score(self, move):
-        locs = [loc for _, loc in move]
-
+        try:
+            locs = [loc for _, loc in move]
+        except ValueError:
+            print("Move:{} ".format(move))
+            locs = [loc for _, loc in move]
         for tile, loc in move: 
             if self[loc].occupied:
-                raise OccupiedSpaceError("Board:{}\nMove:{}".format(str(self), loc))
+                raise OccupiedSpaceError("Board:\n{}\nMove:{}".format(str(self), loc))
             self[loc] = tile
 
         score = self.score_word(locs)
@@ -190,7 +204,7 @@ class Board:
 
 class Board_Space(object):
 
-    def __init__(self, game, grid,loc, bonusType = None):
+    def __init__(self, game, grid, loc, bonusType = None):
         """Makes a board space, taking the game
         , grid, its own location and a bonus type if it is a bonus tile"""
         self.game = game

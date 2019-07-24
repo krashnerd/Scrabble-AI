@@ -22,14 +22,8 @@ def play_game(players):
 		game = game.apply_move(move)
 		print(game.board)
 		print("Player {} made {} points".format(game.current_player_index, game.last_move_score))
-
-
-	
-
-def main():
-	play_game([GreedyPlayer(), GreedyPlayer()])
+		for i in range(len(players)):
+			print("Player {}: {}".format(i, game.players[i].score))
 
 
 
-if __name__ == '__main__':
-	main()
