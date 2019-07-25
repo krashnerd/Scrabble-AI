@@ -85,7 +85,7 @@ class Scrabble(object):
 		self.board = Board(self)
 		self.dictionary = build_dictionary.get_dictionary("dictionary/dict.bytesIO")
 		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
-
+		self.bingo_count = 0
 		for player in self.players:
 			player.refill_rack()
 
@@ -150,6 +150,8 @@ class Scrabble(object):
 
 	def apply_move(self, move):
 		new_locs = [loc for _, loc in move]
+		if len(move) == 7:
+			self.bingo_count += 1
 		player = self.current_player
 		for tile, loc in move:
 			self.board[loc] = tile
@@ -210,7 +212,7 @@ class Tile(object):
 	def __init__(self, game, letter, points = None):
 		self.game = game
 		self.letter = letter
-		
+
 		self.points = points if points is not None else consts.points[letter]
 
 

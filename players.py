@@ -34,5 +34,8 @@ def play_game(players):
 		for i in range(len(players)):
 			print("Player {}: {}, rack: {}".format(i, game.players[i].score, "".join([tile.letter for tile in game.players[i].rack])))
 
+	print("Winner: Player {}".format(game.get_winner()))
+	print("Total bingos: {}".format(game.bingo_count))
+
 
 
