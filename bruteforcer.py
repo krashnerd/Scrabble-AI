@@ -93,32 +93,32 @@ def word_endpoints(game, row_ind, restrictions_list, tiles = None, verbose = Fal
         bordering_spaces.add(7)
 
     pairs = []
-    for start in range(15):
-        if start in occupied_spaces or start in unplayable:
-            continue
 
-        max_end = start
+
+    for start in range(15):
+        # Can't start a word if the previous space is occupied   
+        if start - 1 in occupied_spaces or start in unplayable:
+            continue
 
         for end in range(start, 15):
 
-            # if (end + 1) in occupied_spaces:
-            #     continue
+            # Can't end a word if the next space is occupied
+            if (end + 1) in occupied_spaces:
+                continue
 
             wordrange = set(range(start, end))
 
             if len(wordrange & empty_spaces) > 7 or unplayable & wordrange:
                 break
 
-            if end in bordering_spaces:
-                pairs.append((start, end))
+            if bordering_spaces & wordrange:
+                yield (start, end)
                 break
 
             # if wordrange & bordering_spaces:
             #     must_hit = end - 1
             #     pairs.append((start, ))
             #     break
-
-    return pairs
 
 def get_all_row(game, row, tiles):
     """Get all possible moves with a given row and set of letters"""
@@ -131,7 +131,7 @@ def get_all_row(game, row, tiles):
          
         # Base case 1: End of column
         if col == 15:
-            return move if '$' in _dict else []
+            return []
         loc = (row, col)
 
         # Recursive case 1: Tile is occupied. Move to next.
@@ -146,8 +146,8 @@ def get_all_row(game, row, tiles):
         # Recursive case 2: Nonempty square
         results = []
 
-        # If it's a complete word and some tiles have been played, add to the results list.
-        if '$' in _dict and len(tiles_left) < len(tiles) and col > min_end:
+        # If it's a complete word and some tiles have been played, yield it.
+        if '$' in _dict and len(tiles_left) < len(tiles) and col > min_end and (col == 14 or not board[row, col + 1].occupied):
             yield move
 
         for tile in tiles_left:

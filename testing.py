@@ -3,7 +3,7 @@ import unittest
 from string import ascii_uppercase
 
 blank_board = ['_' * 15] * 15
-verbose = False
+verbose = True
 
 def add_padding(*args):
 	lst = list(args[:])
