@@ -162,6 +162,9 @@ def get_all_row(game, row, tiles):
 
     for (start, end) in endpoint_pairs:
         for move in search_moves_rec(start, end):
+            for _, loc in move:
+                for i in loc:
+                    assert 0 <= i < 15
             yield move
 
 def make_dataset():
@@ -196,7 +199,10 @@ def all_moves(game):
 
 def highest_scoring_move(game):
     
-    return max(all_moves(game), key = lambda move: game.test_move(move))
+    try:
+        return max(all_moves(game), key = lambda move: game.test_move(move))
+    except ValueError:
+        return []
 
 def main():
     a = Scrabble()

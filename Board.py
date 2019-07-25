@@ -4,6 +4,10 @@ class OccupiedSpaceError(Exception):
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
 
+class NegativeIndexError(IndexError):
+    def __init__(self,*args,**kwargs):
+        IndexError.__init__(self,*args,**kwargs)
+
 class Board:
 
     """docstring for S_Board"""
@@ -41,10 +45,15 @@ class Board:
         self[coords].place_tile_on_space(tile)
 
     def __getitem__(self, r, c = None):
+        if r == -1:
+            raise NegativeIndexError
         if c is None:
             if isinstance(r, int):
                 return self.grid[r]
-            r, c = r            
+            r, c = r
+
+        if r == -1:
+            raise NegativeIndexError        
         return self.grid[r][c]
 
     def __setitem__(self, ind, tile):
@@ -153,9 +162,16 @@ class Board:
         all_words = [main_word]
         for r, c in new_tile_locs:
             letter = board[r][c].get_letter()
+
+            # Backtrack until finding an empty square or the start of the board
             while r >= 0 and letter is not None:
                 r -= 1
-                letter = board[r][c].get_letter()
+                try:
+                    letter = board[r][c].get_letter()
+                except IndexError:
+                    exit(0)
+                    letter = None
+
                 
             r += 1
             letter = board[r][c].get_letter()
@@ -165,7 +181,11 @@ class Board:
             while r < 15 and letter is not None:
                 curr_word_locs.append((r, c))
                 r += 1
-                letter = board[r][c].get_letter()
+                try:
+                    letter = board[r][c].get_letter()
+                except IndexError:
+                    break
+                
 
             all_words.append(curr_word_locs)
 

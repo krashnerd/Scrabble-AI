@@ -68,6 +68,9 @@ class InternalPlayer:
 		self.rack = Rack(self.game)
 		self.score = 0
 
+	def refill_rack(self):
+		self.rack.refill()
+
 class Scrabble(object):
 	def __init__(self, num_players = 2):
 		self.letter_dist = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
@@ -82,6 +85,9 @@ class Scrabble(object):
 		self.board = Board(self)
 		self.dictionary = build_dictionary.get_dictionary("dictionary/dict.bytesIO")
 		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
+
+		for player in self.players:
+			player.refill_rack()
 
 	def score(word):
 		points = 0
@@ -143,19 +149,20 @@ class Scrabble(object):
 			self.change_turn()
 
 	def apply_move(self, move):
-		new = copy.deepcopy(self)
 		new_locs = [loc for _, loc in move]
-		player = new.current_player
+		player = self.current_player
 		for tile, loc in move:
-			new.board[loc] = tile
+			self.board[loc] = tile
 			player.rack.remove_letter(tile.letter)
 		player.rack.refill()
+		if not player.rack:
+			self.end_game()
 
-		score = new.score_word(new_locs)
+		score = self.score_word(new_locs)
 		player.score += score
-		new.change_turn()
-		new.last_move_score = score
-		return new
+
+		self.change_turn()
+		self.last_move_score = score
 
 	def test_move(self, move):
 		return self.board.check_move_score(move)
@@ -183,6 +190,9 @@ class Bag(object):
 			self.game.end_game()
 		return pulled_tiles
 
+	def isempty(self):
+		return len(self) == 0
+
 	def swap_tiles(self, tiles_to_swap):
 		"""Given a list of tiles to swap, gets the same number of tiles from the bag"""
 		
@@ -200,11 +210,9 @@ class Tile(object):
 	def __init__(self, game, letter, points = None):
 		self.game = game
 		self.letter = letter
-		if points is not None:
-			self.points = points
-		else:
-			_points, _ = consts.lookup_points_amount[letter]
-			self.points = _points
+		
+		self.points = points if points is not None else consts.points[letter]
+
 
 	def __repr__(self):
 		return self.letter

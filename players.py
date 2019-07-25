@@ -4,6 +4,7 @@ import Scrabble
 class ScrabblePlayer:
 	def __init__(self, program):
 		self.program = program
+		self.time_taken = datetime.timedelta(0)
 
 	def get_move(self, game):
 		return self.program(game)
@@ -14,8 +15,7 @@ class GreedyPlayer(ScrabblePlayer):
 
 def play_game(players):
 	game = Scrabble.Scrabble(len(players))
-	for player in game.players:
-		player.rack.refill()
+
 	turn = 0
 	while not game.get_winner():
 		current_player = players[game.current_player_index]
@@ -27,7 +27,7 @@ def play_game(players):
 		t1 = datetime.datetime.now()
 
 		time = t1-t0
-		game = game.apply_move(move)
+		game.apply_move(move)
 		turn += 1
 		print(game.board)
 		print("Player {} made {} points in time {}".format(game.current_player_index, game.last_move_score, time))

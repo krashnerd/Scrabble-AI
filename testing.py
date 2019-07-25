@@ -3,7 +3,7 @@ import unittest
 from string import ascii_uppercase
 
 blank_board = ['_' * 15] * 15
-verbose = True
+verbose = False
 
 def add_padding(*args):
 	lst = list(args[:])
@@ -184,10 +184,11 @@ class ScoringTester(unittest.TestCase):
 	def test_highest_scoring_move_empty_board(self):
 		"""Test to see if the brute forcer can find the highet-scoring move on an empty board"""
 		game = game_from_string(blank_board)
-		game.current_player.rack.extend([Scrabble.Tile(game, x) for x in "LOOPERS"])
+		self.set_current_rack(game, "LOOPERS")
 		move = bruteforcer.highest_scoring_move(game)
-		applied = game.apply_move(move)
-		self.assertEqual(applied.last_move_score, 74)
+		game.apply_move(move)
+		print(game.board)
+		self.assertEqual(game.last_move_score, 74)
 
 
 
