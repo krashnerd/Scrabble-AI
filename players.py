@@ -17,7 +17,7 @@ def play_game(players):
 	game = Scrabble.Scrabble(len(players))
 
 	turn = 0
-	while not game.get_winner():
+	while game.get_winner() is None:
 		current_player = players[game.current_player_index]
 		print("\n\nTurn {}\n:".format(turn))
 
@@ -27,14 +27,18 @@ def play_game(players):
 		t1 = datetime.datetime.now()
 
 		time = t1-t0
+		current_player.time_taken += time
 		game.apply_move(move)
 		turn += 1
-		print(game.board)
 		print("Player {} made {} points in time {}".format(game.current_player_index, game.last_move_score, time))
 		for i in range(len(players)):
 			print("Player {}: {}, rack: {}".format(i, game.players[i].score, "".join([tile.letter for tile in game.players[i].rack])))
 
+	print(game.board)
+
 	print("Winner: Player {}".format(game.get_winner()))
+	for i, player in enumerate(players):
+		print("Player {} total time: {}".format(i, player.time_taken))
 	print("Total bingos: {}".format(game.bingo_count))
 
 

@@ -35,7 +35,7 @@ def game_from_string(letter_placements):
 	for r_ind, r_val in enumerate(letter_placements):
 		for c_ind, letter in enumerate(r_val):
 			if letter in ascii_uppercase:
-				new_tile = Scrabble.Tile(game, letter)
+				new_tile = Scrabble.Tile(letter)
 				board[r_ind, c_ind] = new_tile
 
 	return game
@@ -50,7 +50,7 @@ def cramp_game():
 class ScoringTester(unittest.TestCase):
 	def set_current_rack(self, game, letters):
 		game.current_player.rack.clear()
-		game.current_player.rack.extend([Scrabble.Tile(game, x) for x in letters])
+		game.current_player.rack.extend([Scrabble.Tile(x) for x in letters])
 
 	def test_basic_row(self):
 		letter_placements = blank_board[:]
@@ -146,7 +146,7 @@ class ScoringTester(unittest.TestCase):
 
 		loc = (8, 7)
 
-		game.current_player.rack.extend([Scrabble.Tile(game, x) for x in "LOOPERS"])
+		game.current_player.rack.extend([Scrabble.Tile(x) for x in "LOOPERS"])
 		all_moves = bruteforcer.get_all_row(game, 8, game.current_player.rack)
 		for move in all_moves:
 			applied = game.apply_move(move)

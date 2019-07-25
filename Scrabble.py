@@ -6,7 +6,14 @@ from Board import Board
 from collections import OrderedDict
 
 class GameError(Exception):
-	pass
+	def __init__(self, *args, **kwargs):
+		Exception.__init__(self, *args, **kwargs)
+
+class GameOverError(GameError):
+
+	def __init__(self, *args, **kwargs):
+		GameError.__init__(self, *args, **kwargs)
+		self.message = "Attempted play on a completed game"
 
 class TileNotFoundError(GameError):
 	def __init__(self, *args, **kwargs):
@@ -20,12 +27,8 @@ class TileNotFoundError(GameError):
 # 		self.word = word
 
 class Rack(list):
-	def __init__(self, game, items = []):
-		self.game = game
+	def __init__(self, items = []):
 		super().__init__(items)
-
-	def refill(self):
-		self.extend(self.game.bag.pull_tiles(self.tiles_needed()))
 
 	def has_tiles(self, move):
 		for tile, position in move:
@@ -45,7 +48,6 @@ class Rack(list):
 			raise TileNotFoundError
 
 	def remove_tiles(self, move):
-
 		if isinstance(move, TileExchange):
 			pass
 		try:
@@ -63,31 +65,29 @@ class Rack(list):
 
 
 class InternalPlayer:
-	def __init__(self, game = None):
-		self.game = game
-		self.rack = Rack(self.game)
+	def __init__(self):
+		self.rack = Rack()
 		self.score = 0
 
-	def refill_rack(self):
-		self.rack.refill()
+
 
 class Scrabble(object):
 	def __init__(self, num_players = 2):
 		self.letter_dist = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
 		points = {1:"AEIOULNSTR",2:"DG",3:"BCMP",4:"FHVWY",5:"K",8:"JX",10:"QZ"}
-		self.players = [InternalPlayer(self) for _ in range(num_players)]
+		self.players = [InternalPlayer() for _ in range(num_players)]
 
 		self.last_move_score = 0
 		self.current_player_index = 0
 		self.change_turn()
 		self.winner = None
-		self.bag = Bag(self)
-		self.board = Board(self)
+		self.bag = Bag()
+		self.board = Board()
 		self.dictionary = build_dictionary.get_dictionary("dictionary/dict.bytesIO")
 		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
 		self.bingo_count = 0
-		for player in self.players:
-			player.refill_rack()
+		self.refill_racks()
+		self.consecutive_passes = 0
 
 	def score(word):
 		points = 0
@@ -101,6 +101,11 @@ class Scrabble(object):
 		if not locs:
 			return 0
 		return self.board.score_word(locs)
+
+	def refill_racks(self):
+		for player in self.players:
+			rack = player.rack
+			rack.extend(self.bag.pull_tiles(rack.tiles_needed()))
 
 	def return_hand(self, num_tiles = 7):
 		return self.bag.pull_tiles(num_tiles)
@@ -128,16 +133,20 @@ class Scrabble(object):
 			return node
 
 	def end_game(self):
-		best_score = max([player.score for player in self.players])
-		for i, player in enumerate(self.players):
-			print("Player {}: {}".format(i, player.score))
-			if player.score == best_score:
-				self.winner = i
+		empty_rack_player = [player for player in self.players if not player.rack]
+		if empty_rack_player:
+			bonus_recipient = empty_rack_player[0]
+			bonus_score = 0
+						
+			for player in self.players:
+				penalty = sum(tile.points for tile in player.rack)
+				bonus_recipient.score += penalty
+				player.score -= penalty
+
+		self.winner = max(enumerate(self.players), key = lambda x:x[1].score)[0]
 
 	def get_winner(self):
 		return self.winner
-
-
 
 	def print_board(self):
 		self.board.print_grid()
@@ -149,14 +158,24 @@ class Scrabble(object):
 			self.change_turn()
 
 	def apply_move(self, move):
+		if self.winner is not None:
+			raise GameOverError
 		new_locs = [loc for _, loc in move]
+
+		# If every player passes their turn, end the game.
+		self.consecutive_passes = 0 if move else self.consecutive_passes + 1
+
+		if self.consecutive_passes >= len(self.players):
+			self.end_game()
+			return
+
 		if len(move) == 7:
 			self.bingo_count += 1
 		player = self.current_player
 		for tile, loc in move:
 			self.board[loc] = tile
 			player.rack.remove_letter(tile.letter)
-		player.rack.refill()
+		self.refill_racks()
 		if not player.rack:
 			self.end_game()
 
@@ -177,19 +196,16 @@ def NotEnoughTilesError(GameError):
 		self.message = "Too few tiles to swap"
 
 class Bag(object):
-	def __init__(self, game):
-		self.game = game
+	def __init__(self):
 		self.tiles = []
 		for letter, points, amount in consts.letter_points_amount:
 			for _ in range(amount):
-				self.tiles.append(Tile(game = self.game, letter = letter, points = points))
+				self.tiles.append(Tile(letter = letter, points = points))
 
 		random.shuffle(self.tiles)
 
 	def pull_tiles(self, num_tiles = 1):
 		pulled_tiles, self.tiles = (self.tiles[:num_tiles], self.tiles[num_tiles:])
-		if not self.tiles:
-			self.game.end_game()
 		return pulled_tiles
 
 	def isempty(self):
@@ -209,8 +225,7 @@ class Bag(object):
 		return len(self.tiles)
 
 class Tile(object):
-	def __init__(self, game, letter, points = None):
-		self.game = game
+	def __init__(self, letter, points = None):
 		self.letter = letter
 
 		self.points = points if points is not None else consts.points[letter]
