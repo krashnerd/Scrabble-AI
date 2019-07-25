@@ -20,15 +20,15 @@ def get_tile_regex(coords, game, verbose = False):
     """ Given a coordinate, find what letters 
     can be put in said coordinate assuming that only one letter is going in the column
     (word is being placed horizontally)"""
+
     matchall = re.compile(".")
     board = game.board
-
     r,c = coords
-    letters = [board.get_letter(i, c) for i in range(15)]
-    letters = "".join(['_' if x is None else x for x in letters])
 
-    col = "{}?{}".format(letters[:r], letters[r+1:])
-    chunks = col.split("_")
+    letters = ["?" if i == r else board.get_letter(i, c) for i in range(15)]
+    letters = "".join([letter if letter else '_' for letter in letters])
+    # Splits into sections
+    chunks = letters.split("_")
     if verbose:
         print(col, chunks)
         print(game.board)
@@ -65,7 +65,7 @@ def make_regexes(game, row_ind, verbose = False):
 
     return possibilities[:]
 
-def word_endpoints(game, row_ind, restrictions_list, tiles = None):
+def word_endpoints(game, row_ind, restrictions_list, tiles = None, verbose = False):
     """Given a certain row in a certain game, as well as
     the regex for how spaces are limited by the columns, determine all possible starts and ends.
     Determines the start and end of the actual word, not the start and end of where tiles would be placed, 
@@ -74,32 +74,37 @@ def word_endpoints(game, row_ind, restrictions_list, tiles = None):
     """
 
     occupied_spaces = {c for c in range(15) if game.board.get(row_ind, c).occupied}
+    empty_spaces = set(range(15)) - occupied_spaces
+
+
+    # Squares which border a current tile. Every play must include at least one bordering space.
 
     bordering_spaces = {c for c in range(15)
-        if not utils.matches_all(restrictions_list[c]) or
+        if (not utils.matches_all(restrictions_list[c])) or
             ({c + 1, c - 1} & occupied_spaces)} - occupied_spaces
+    # Letters in rack
     letters = None if tiles is None else "".join([tile.letter for tile in tiles])
-    unplayable = {c for c in range(15) if not restrictions_list[c].match(letters)}
+
+    # Spaces which the player cannot use.
+    unplayable = {c for c in empty_spaces if letters and not restrictions_list[c].match(letters)}
 
     # Count the starting square as a bordering space.
     if row_ind == 7 and occupied_spaces == set():
         bordering_spaces.add(7)
 
-    empty_spaces = {a for a in range(15)} - occupied_spaces
-
     pairs = []
     for start in range(15):
-        if (start - 1) in occupied_spaces or start in unplayable:
+        if start in occupied_spaces or start in unplayable:
             continue
 
         max_end = start
 
         for end in range(start, 15):
 
-            if (end + 1) in occupied_spaces:
-                continue
+            # if (end + 1) in occupied_spaces:
+            #     continue
 
-            wordrange = set([i for i in range(start, end)])
+            wordrange = set(range(start, end))
 
             if len(wordrange & empty_spaces) > 7 or unplayable & wordrange:
                 break
@@ -126,7 +131,7 @@ def get_all_row(game, row, tiles):
          
         # Base case 1: End of column
         if col == 15:
-            return [word] if game.check_word(word) else []
+            return move if '$' in _dict else []
         loc = (row, col)
 
         # Recursive case 1: Tile is occupied. Move to next.
@@ -134,14 +139,16 @@ def get_all_row(game, row, tiles):
         if letter:
             if letter not in _dict:
                 return []
-            return search_moves_rec(col + 1, min_end, _dict[letter], tiles_left, word + letter, move)
+            for recursive_move in search_moves_rec(col + 1, min_end, _dict[letter], tiles_left, word + letter, move):
+                yield recursive_move
+            return
  
         # Recursive case 2: Nonempty square
         results = []
 
         # If it's a complete word and some tiles have been played, add to the results list.
         if '$' in _dict and len(tiles_left) < len(tiles) and col > min_end:
-            results.append(move)
+            yield move
 
         for tile in tiles_left:
             letter = tile.letter
@@ -150,11 +157,12 @@ def get_all_row(game, row, tiles):
                 
                 new_tiles_left = [x for x in tiles_left if x is not tile]
                 new_move = move + [(tile, board[loc].loc)]
-                results.extend(search_moves_rec(col + 1, min_end, _dict[letter], new_tiles_left, word + letter, new_move))
+                for recursive_move in (search_moves_rec(col + 1, min_end, _dict[letter], new_tiles_left, word + letter, new_move)):
+                    yield recursive_move
 
-        return results
-
-    return [move for (start, end) in endpoint_pairs for move in search_moves_rec(start, end) ]
+    for (start, end) in endpoint_pairs:
+        for move in search_moves_rec(start, end):
+            yield move
 
 def make_dataset():
     with open('starting_hands_training_data.csv', 'w') as csvfile:
@@ -174,32 +182,21 @@ def make_dataset():
 
 def all_moves(game):
     orig = game.board.grid[:]
+    transposed = utils.grid_transpose(orig)
     moves = []
-    for _ in range(2):
+    vertical = False
+    for direction in ("horizontal", "vertical"):
         for row in range(15):
-            moves.extend(get_all_row(game, row, game.current_player.rack)) 
+            for move in get_all_row(game, row, game.current_player.rack):
+                game.board.grid = orig
+                yield move
+                if direction == "vertical":
+                    game.board.grid = transposed
         game.board.transpose()
-    for r in range(15):
-        for c in range(15):
-            assert orig[r][c] == game.board.grid[r][c]
-    return moves
 
 def highest_scoring_move(game):
-    moves = all_moves(game)
-
-    if not moves:
-        return []
-    # num_moves = len(moves)
-    # best_score = 0
-    # best_move = None
-    # for progress, move in enumerate(moves):
-    #     score = game.test_move(move)
-    #     if score > best_score:
-    #         best_move = move
-    #         best_score = score
-
-    return max(moves, key = lambda move:game.test_move(move))
-
+    
+    return max(all_moves(game), key = lambda move: game.test_move(move))
 
 def main():
     a = Scrabble()

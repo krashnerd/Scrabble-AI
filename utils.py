@@ -17,3 +17,8 @@ def grid_transpose(grid):
 def matches_all(regex):
     return bool(regex.match('0'))
 
+def count(iter):
+    try:
+        return len(iter)
+    except TypeError:
+        return sum(1 for _ in iter)

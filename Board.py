@@ -74,10 +74,7 @@ class Board:
         return result
 
     def transpose(self):
-        print("Transposing")
-
         self.grid = utils.grid_transpose(self.grid)
-
 
     def get(self, r,c = None):
         if c == None:

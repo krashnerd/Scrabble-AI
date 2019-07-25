@@ -143,7 +143,6 @@ class Scrabble(object):
 			self.change_turn()
 
 	def apply_move(self, move):
-		print("\n".join(["".join([tile.letter for tile in player.rack]) for player in self.players]))
 		new = copy.deepcopy(self)
 		new_locs = [loc for _, loc in move]
 		player = new.current_player
