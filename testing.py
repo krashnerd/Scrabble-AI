@@ -161,7 +161,7 @@ class ScoringTester(unittest.TestCase):
 		restrictions = bruteforcer.make_regexes(game, row)
 		endpoints = bruteforcer.word_endpoints(game, row, restrictions)
 		found = False
-		self.assertTrue((8, 8) in endpoints)
+		self.assertTrue((6, 10) in endpoints)
 
 	def test_get_all_finds_one_letter_plays(self):
 		"""Testing to see if all_moves finds one-letter plays"""
