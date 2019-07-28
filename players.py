@@ -29,12 +29,12 @@ def play_game(players):
 		time = t1-t0
 		current_player.time_taken += time
 		game.apply_move(move)
+		print(game.board)
 		turn += 1
 		print("Player {} made {} points in time {}".format(game.current_player_index, game.last_move_score, time))
 		for i in range(len(players)):
 			print("Player {}: {}, rack: {}".format(i, game.players[i].score, "".join([tile.letter for tile in game.players[i].rack])))
 
-	print(game.board)
 
 	print("Winner: Player {}".format(game.get_winner()))
 	for i, player in enumerate(players):

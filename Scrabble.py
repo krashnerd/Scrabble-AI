@@ -76,11 +76,6 @@ class Scrabble(object):
 		self.letter_dist = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
 		points = {1:"AEIOULNSTR",2:"DG",3:"BCMP",4:"FHVWY",5:"K",8:"JX",10:"QZ"}
 		self.players = [InternalPlayer() for _ in range(num_players)]
-
-		self.last_move_score = 0
-		self.current_player_index = 0
-		self.change_turn()
-		self.winner = None
 		self.bag = Bag()
 		self.board = Board()
 		self.dictionary = build_dictionary.get_dictionary("dictionary/dict.bytesIO")
@@ -88,6 +83,11 @@ class Scrabble(object):
 		self.bingo_count = 0
 		self.refill_racks()
 		self.consecutive_passes = 0
+
+		self.last_move_score = 0
+		self.current_player_index = 0
+		self.current_player = self.players[self.current_player_index]
+		self.winner = None
 
 	def score(word):
 		points = 0
@@ -107,9 +107,9 @@ class Scrabble(object):
 			rack = player.rack
 			rack.extend(self.bag.pull_tiles(rack.tiles_needed()))
 
-	def return_hand(self, num_tiles = 7):
-		return self.bag.pull_tiles(num_tiles)
-	# 	hand = random.choice(self.bag.tiles, 7, replace = False)
+	# def return_hand(self, num_tiles = 7):
+	# 	return self.bag.pull_tiles(num_tiles)
+	# # 	hand = random.choice(self.bag.tiles, 7, replace = False)
 
 	# 	return hand
 
@@ -118,19 +118,19 @@ class Scrabble(object):
 		border = ("-" * len(out_str))
 		print("\n".join([border, out_str, border]))
 
-	def get_dictnode(self, word, _dict = None):# self.dictionary):
-			"""Gets the from a valid first portion of a word in a dictionary"""
-			node = self.dictionary if _dict == None else _dict
-			try:
-				for letter in word:
-					node = node[letter]
+	# def get_dictnode(self, word, _dict = None):# self.dictionary):
+	# 		"""Gets the from a valid first portion of a word in a dictionary"""
+	# 		node = self.dictionary if _dict == None else _dict
+	# 		try:
+	# 			for letter in word:
+	# 				node = node[letter]
 
-			except KeyError as key_err:
-				#print(key_err)
-				#print("%s not in dictionary" % word)
-				return {}
+	# 		except KeyError as key_err:
+	# 			#print(key_err)
+	# 			#print("%s not in dictionary" % word)
+	# 			return {}
 
-			return node
+	# 		return node
 
 	def end_game(self):
 		empty_rack_player = [player for player in self.players if not player.rack]
@@ -156,6 +156,7 @@ class Scrabble(object):
 		self.current_player = self.players[self.current_player_index]
 		if self.current_player is None:
 			self.change_turn()
+
 
 	def apply_move(self, move):
 		if self.winner is not None:
