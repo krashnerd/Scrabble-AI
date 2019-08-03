@@ -30,14 +30,18 @@ def show_board():
 
     for c in range(15):
         for r in range(15):
-
+            tile = board[r,c]
             coords = [((r + a) * tile_size, (c + b) * tile_size) for a,b in mini_square]
             x, y = ((r + .5) * tile_size, (c + .5) * tile_size)
 
+            bonus = tile.bonusType
 
-            square = w.create_polygon(coords, outline = "black", fill = bonusGuide.get(board[r,c].bonusType,'tan'))
+            square = w.create_polygon(coords, outline = "black", fill = bonusColor.get(bonus,'tan'))
 
-            w.create_text(x, y, font="Purisa", text=str((r, c)))
+            text_color = "white" if bonus in ("L3", "W3") else "black"
+            w.create_text(x, y, font=("Arial", 16), text = bonusText.get(bonus, ''), fill = text_color)
+
+        
 
 
 
