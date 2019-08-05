@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import N, S, E, W, NE, NW, SE, SW
-from Scrabble import Scrabble
+from Scrabble
 
 tile_size = 40
 tile_center = (tile_size//2, tile_size//2)
@@ -12,7 +12,7 @@ leftclick = '<Button-1>'
 
 class Display():
     def __init__(self, win, game = None):
-        self.game = game or Scrabble()
+        self.game = game or Scrabble.Scrabble()
         game = self.game
         self.win = win
         self.win.geometry('1000x900+2000+50')
@@ -25,8 +25,6 @@ class Display():
         self.rack.grid(column = 2, pady = 20, columnspan = 10, row = 16, sticky = S + W + E)
 
         self.rack.refill_rack()
-
-
 
         closebutton = tk.Button(self.win, text="close", width=10, command=self.win.destroy)
         closebutton.grid(column = 0, sticky = S + W)
@@ -42,7 +40,8 @@ class Display():
         """ Move a tile to a given location"""
         pass
 
-class DisplayRack(tk.Frame):
+class DisplayRack():
+    """ Wrapper class for rack"""
     def __init__(self, display, game):
         self.display = display
         self.master = display.win
@@ -57,9 +56,21 @@ class DisplayRack(tk.Frame):
         pass
 
     def refill_rack(self):
-        for ind, game_tile in enumerate(self.game.current_player.rack):
-            tile = DisplayTile(self.display, game_tile)
+        self.game.current_player.rack
+
+        self.tiles = [DisplayTile(self.display, game_tile)
+            for game_tile in ]
+            
+
+    def render(self):
+        for ind, tile in enumerate(self.tiles):
             tile.grid(row = 0, column = ind)
+
+    def __iter__(self):
+        return self.tiles.__iter__
+
+
+
 
 class DisplayTile(tk.Canvas):
     def __init__(self, display, game_tile):
@@ -76,18 +87,17 @@ class DisplayTile(tk.Canvas):
         self.create_text(tile_center, text = self.letter, font = ("Arial", 24))
         self.create_text((35, 35), text = str(self.points), font = ("Arial", 8))
 
-
-
-
+    def __eq__(self, other):
+        return (isinstance(other, DisplayTile) and self.game_tile == other.game_tile) or
+        isinstance(other, Scrabble.Tile) and self.game_tile == other
 
 class DisplayBoard(tk.Frame):
     def __init__(self, display, game):
         self.display = display
         self.master = self.display.win
-        self.game = game or Scrabble()
+        self.game = game or Scrabble.Scrabble()
         self.game_board = self.game.board
         
-
         super().__init__(self.master, width = board_size, height = board_size)
         
         self.squares = [[None] * 15 for _ in range(15)]
