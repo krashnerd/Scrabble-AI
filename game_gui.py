@@ -1,43 +1,42 @@
 import tkinter as tk
+from tkinter import N, S, E, W, NE, NE, SE, SW
 from Scrabble import Scrabble
 
 tile_size = 40
+tile_center = (tile_size//2, tile_size//2)
 board_size = 15 * tile_size
 
 mini_square = [(0,0),(0,1),(1,1),(1,0)]
 
 
 class Display():
-    def __init__(self, win):
+    def __init__(self, win, game = None):
+        self.game = game or Scrabble()
         self.win = win
-        # self.board = tk.Frame(width = board_size, height = board_size, bg = 'Beige')
+        self.win.geometry('1000x900+2000+50')
+        self.board = tk.Frame(self.win, width = board_size, height = board_size)
+        self.board.grid(padx=5, pady=5, rowspan = 15, columnspan = 15)
+        self.board_squares = [[None] * 15 for _ in range(15)]
 
-        self.canvas = tk.Canvas(self.win, bg = 'white', width = tile_size * 15 + 300, height = tile_size * 15 + 150)
 
-    def test_pack(self):
-        self.canvas.create_text(100, 100, font=("Arial", 16), text = "poop", fill = "black")
-        
-        self.canvas.pack()
+    def full_text(bonus_code):
 
-    def show_board(self):
-        game = Scrabble()
-        board = game.board
-        w = self.canvas
-        bonusColor = {
-                    None:'Beige',
+        b_type, b_number = list(bonus_code)
+
+    def create_board(self):
+        board = self.game.board
+        bonus_color_lookup = {
                     'L2':'Cyan',
                     'W2':'Pink',
                     'L3':'Blue',
                     'W3':'Red',
                     }
-        bonusText = {
-                    None:'',
-                    'L2':'DLS',
-                    'W2':'DWS',
-                    'L3':'TLS',
-                    'W3':'TWS',
+        bonus_text_lookup = {
+                    'L2':'Double\nletter\nscore',
+                    'W2':'Double\nword\nscore',
+                    'L3':'Triple\nletter\nscore',
+                    'W3':'Triple\nword\nscore',
                     }
-
 
         for c in range(15):
             for r in range(15):
@@ -46,23 +45,30 @@ class Display():
                 x, y = ((r + .5) * tile_size, (c + .5) * tile_size)
 
                 bonus = tile.bonusType
+                bg_color = bonus_color_lookup.get(bonus, 'beige')
+                text_color = "white" if bg_color in ("Blue", "Red") else "black"
+                square = tk.Canvas(self.board, width = tile_size, height = tile_size, bg = bg_color, 
+                    borderwidth = 1, relief = tk.RIDGE, 
+                    highlightcolor = 'black', highlightbackground = 'black')
+                bonus_text = bonus_text_lookup.get(bonus, None)
+                if bonus_text:
+                    text = square.create_text(tile_center, text = bonus_text, font = ("Arial", 10), fill = text_color)
 
-                square = w.create_polygon(coords, outline = "black", fill = bonusColor.get(bonus,'tan'))
+
+                square.grid(row = r, column = c)
+                self.board_squares[r][c] = square
 
                 text_color = "white" if bonus in ("L3", "W3") else "black"
-                w.create_text(x, y, font=("Arial", 16), text = bonusText.get(bonus, ''), fill = text_color)
 
-        closebutton = tk.Button(w, text="get", width=10, command=self.test_pack)
-        closebutton.place(x = 650, y = 650)
-        w.pack()
-
+        closebutton = tk.Button(self.win, text="close", width=10, command=self.test_pack)
+        closebutton.grid(column = 0, sticky = SW)
 
 
 
 def main():
     win = tk.Tk()
     display = Display(win)
-    display.show_board()
+    display.create_board()
     win.mainloop()
 
 
