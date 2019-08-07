@@ -200,8 +200,10 @@ class Bag(object):
 	def __init__(self):
 		self.tiles = []
 		for letter, points, amount in consts.letter_points_amount:
-			for _ in range(amount):
-				self.tiles.append(Tile(letter = letter, points = points))
+			for tile_id in range(amount):
+				self.tiles.append(Tile(letter = letter, points = points, tile_id = tile_id))
+
+		self.all_tiles = self.tiles[:]
 
 		random.shuffle(self.tiles)
 
@@ -225,12 +227,18 @@ class Bag(object):
 	def __len__(self):
 		return len(self.tiles)
 
-class Tile(object):
-	def __init__(self, letter, points = None):
-		self.letter = letter
+	def __iter__(self):
+		for tile in self.tiles:
+			yield tile
 
+class Tile(object):
+	def __init__(self, letter, points = None, tile_id = None):
+		self.letter = letter
+		self.tile_id = tile_id
 		self.points = points if points is not None else consts.points[letter]
 
+	def __hash__(self):
+		return hash((self.letter, self.tile_id))
 
 	def __repr__(self):
 		return self.letter

@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import N, S, E, W, NE, NW, SE, SW
-from Scrabble
+import Scrabble
 
 tile_size = 40
 tile_center = (tile_size//2, tile_size//2)
@@ -16,18 +16,24 @@ class Display():
         game = self.game
         self.win = win
         self.win.geometry('1000x900+2000+50')
-        self.board = DisplayBoard(self, self.game)
-        self.board.create_board()
+        self.tiles = {}
         self.rack = DisplayRack(self, self.game)
 
-        self.board.grid(padx=5, pady=5, rowspan = 15, columnspan = 15, sticky = NW)
+        self.board = DisplayBoard(self, self.game)
+        self.board.create_board()
+        self.tiles.update({tile: DisplayTile(self, tile) for tile in game.bag.all_tiles})
 
-        self.rack.grid(column = 2, pady = 20, columnspan = 10, row = 16, sticky = S + W + E)
+        
+
+        # self.board.grid(padx=5, pady=5, rowspan = 15, columnspan = 15, sticky = NW)
+
+
+        
 
         self.rack.refill_rack()
 
         closebutton = tk.Button(self.win, text="close", width=10, command=self.win.destroy)
-        closebutton.grid(column = 0, sticky = S + W)
+        closebutton.grid(column = 0, rowspan = 2, sticky = S + W)
         self.win.bind('q', self.destroy)
         print("Size:", self.win.grid_size())
 
@@ -47,7 +53,11 @@ class DisplayRack():
         self.master = display.win
         self.game = game
         self.tiles = []
-        self.gui_obj = tk.Frame(self.master, width = tile_size * 7, height = tile_size)
+        self.tile_lookup = self.display.tiles
+
+    def __iter__(self):
+        for tile in self.tiles:
+            yield tile
 
     def grid(self, *args, **kwargs):
         self.gui_obj.grid(*args, **kwargs)
@@ -56,18 +66,12 @@ class DisplayRack():
         pass
 
     def refill_rack(self):
-        self.game.current_player.rack
-
-        self.tiles = [DisplayTile(self.display, game_tile)
-            for game_tile in ]
+        self.tiles = [self.tile_lookup.get(tile) for tile in self.game.current_player.rack]
+        self.render()
             
-
     def render(self):
-        for ind, tile in enumerate(self.tiles):
-            tile.grid(row = 0, column = ind)
-
-    def __iter__(self):
-        return self.tiles.__iter__
+        for ind, tile in enumerate(self):
+            tile.grid(row = 16, column = 2 + ind, pady = 20)
 
 
 
@@ -81,15 +85,20 @@ class DisplayTile(tk.Canvas):
         self.letter = game_tile.letter
         self.points = game_tile.points
 
-        super().__init__(display.rack.gui_obj, width = tile_size, height = tile_size)
+        super().__init__(self.win, width = tile_size, height = tile_size)
 
         self.create_rectangle(0,0,tile_size,tile_size, fill = 'beige')
         self.create_text(tile_center, text = self.letter, font = ("Arial", 24))
         self.create_text((35, 35), text = str(self.points), font = ("Arial", 8))
 
+        self.bind(leftclick, self.handle_click)
+
+    def handle_click(self, event):
+        self.focus_set()
+
     def __eq__(self, other):
-        return (isinstance(other, DisplayTile) and self.game_tile == other.game_tile) or
-        isinstance(other, Scrabble.Tile) and self.game_tile == other
+        return ((isinstance(other, DisplayTile) and self.game_tile == other.game_tile) or
+            (isinstance(other, Scrabble.Tile) and self.game_tile == other))
 
 class DisplayBoard(tk.Frame):
     def __init__(self, display, game):
@@ -97,11 +106,11 @@ class DisplayBoard(tk.Frame):
         self.master = self.display.win
         self.game = game or Scrabble.Scrabble()
         self.game_board = self.game.board
-        
+
         super().__init__(self.master, width = board_size, height = board_size)
         
         self.squares = [[None] * 15 for _ in range(15)]
-        self.current_move = []
+        self.current_move = dict()
         self.focus_tile = []
 
     def move_tile(loc_1, loc_2):
@@ -121,11 +130,23 @@ class DisplayBoard(tk.Frame):
         self.squares[r2][c2] = s1
 
 
+    def take_rack_tile(self, display_tile):
+        new_tile = DisplayTile(self.d)
+
+
 
     def handle_click(self, r, c):
         """ Handle click on the square at (r, c)"""
         if self.game_board[r,c].occupied:
             return
+
+        focused = self.master.focus_get()
+        if isinstance(focused, DisplayTile):
+            # self.squares[r][c].grid_forget()
+            focused.grid(row = r, column = c, pady = 0)
+
+        return
+
 
         self.swap_tiles_at((0,0),(0,1))
         print("Clicked on {}".format((r,c)))
@@ -160,7 +181,7 @@ class DisplayBoard(tk.Frame):
                 bg_color = bonus_color_lookup.get(bonus, 'white')
                 text_color = "white" if bg_color in ("Blue", "Red") else "black"
 
-                square = tk.Canvas(self, width = tile_size, height = tile_size, bg = bg_color, 
+                square = tk.Canvas(self.display.win, width = tile_size, height = tile_size, bg = bg_color, 
                     borderwidth = 1, relief = tk.RIDGE, 
                     highlightcolor = 'black', highlightbackground = 'black')
 
@@ -173,7 +194,7 @@ class DisplayBoard(tk.Frame):
                     text = square.create_text(tile_center, text = bonus_text, font = ("Arial", 10), fill = text_color, justify = tk.CENTER)
 
 
-                square.grid(row = r, column = c)
+                square.grid(row = r, column = c, sticky = E)
                 self.squares[r][c] = square
 
                 text_color = "white" if bonus in ("L3", "W3") else "black"
