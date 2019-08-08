@@ -23,7 +23,7 @@ def uncompress_string(data):
 
 
 
-def pickle_dawg(infile = "dictionary/dictionary.json", outfile = "dictionary/Alphadict.bytesIO"):
+def pickle_dawg(infile = "dictionary.json", outfile = "Alphadict.bytesIO"):
     file = open(infile)
     data = file.read()
     file.close()
@@ -44,15 +44,15 @@ def pickle_dawg(infile = "dictionary/dictionary.json", outfile = "dictionary/Alp
 
     return dawg_nodes[0]
 
-def get_dictionary(filename = "dictionary/dict.bytesIO"):
+def get_dictionary(filename = "dict.bytesIO"):
     with open(filename, "rb") as dictfile:
         dawg = pickle.load(dictfile)
 
     return dawg[0]
 
 def main():
-    d1 = get_dictionary("dictionary/dict.bytesIO")
-    d2 = get_dictionary("dictionary/Alphadict.bytesIO")
+    d1 = get_dictionary("dict.bytesIO")
+    d2 = get_dictionary("Alphadict.bytesIO")
     inp = None
     print("Input a word to check in the dictionary, or input 'Q' to quit")
     while inp != "Q":
