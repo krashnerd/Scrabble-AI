@@ -7,7 +7,7 @@ letter_points_amount = [('A', 1, 9), ('B', 3, 2), ('C', 3, 2), ('D', 2, 4), ('E'
 lookup_points_amount = {letter: (points, amount) for letter, points, amount in letter_points_amount}
 points = {letter: points for letter, points, _ in letter_points_amount}
 
-dictionary = get_dictionary()
+dictionary = get_dictionary("dictionary_files/dict.bytesIO")
 # letter_info = [(letter, points[letter], distribution[ind]) for ind, letter in enumerate(string.ascii_uppercase)] 
 
 # with open("temp.txt", "w") as outfile:

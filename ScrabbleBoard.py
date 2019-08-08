@@ -1,4 +1,5 @@
 from ScrabbleTile import Tile
+from ScrabbleDictionary import dictionary
 import utils, consts
 class OccupiedSpaceError(Exception):
     def __init__(self,*args,**kwargs):
@@ -208,7 +209,7 @@ class Board:
         all_words = ["".join([self[loc].get_letter() for loc in word_locs]) for word_locs in all_word_locs]
 
         for word in all_words:
-            if not self.game.check_word(word):
+            if word not in dictionary:
                 raise InvalidMoveError
 
         base_score = sum([score_single_word(word) for word in all_word_locs if len(word) > 1])

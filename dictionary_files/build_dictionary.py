@@ -1,5 +1,5 @@
 """ Parsing JSON file and making DAWG """
-import time, zlib, json, AlphaDict
+import time, zlib, json
 from base64 import b64encode, b64decode
 import pickle
 def check_word(word, start):

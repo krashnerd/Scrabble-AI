@@ -3,6 +3,7 @@ import csv, string, re, utils
 from functools import reduce
 import numpy as np
 from Scrabble import Scrabble
+from ScrabbleDictionary import dictionary
 
 
 def score_firstword(tiles):
