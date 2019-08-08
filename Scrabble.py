@@ -45,7 +45,7 @@ class Rack(list):
 				to_remove = tile
 				break
 		try:
-			self.remove(to_remove)
+			self.remove(letter)
 		except UnboundLocalError:
 			raise TileNotFoundError
 
@@ -160,33 +160,48 @@ class Scrabble(object):
 
 
 	def apply_move(self, move):
+		player = self.current_player
+
 		if self.winner is not None:
 			raise GameOverError
-		new_locs = [loc for _, loc in move]
 
 		try:
-			score = self.board.check_move_score(move)
-		except InvalidMoveError:
-			raise
+			new_locs = [loc for _, loc in move]
+
+		except TypeError:
+			player.rack.extend(self.bag.swap_tiles(move))
+			
+			for tile in move:
+				player.rack.remove(tile)
+
+			score = 0
 			return
 
-		# If every player passes their turn, end the game.
-		self.consecutive_passes = 0 if move else self.consecutive_passes + 1
-		if self.consecutive_passes >= len(self.players):
-			self.end_game()
-			return
+		else:
+			try:
+				score = self.board.check_move_score(move)
 
-		if len(move) == 7:
-			self.bingo_count += 1
-		player = self.current_player
+			except InvalidMoveError:
+				raise
+
+			if len(move) == 7:
+				self.bingo_count += 1
+
+			# If every player passes their turn, end the game.
+			self.consecutive_passes = 0 if move else self.consecutive_passes + 1
+			if self.consecutive_passes >= len(self.players):
+				self.end_game()
+				return
+		
 		for tile, loc in move:
 			self.board[loc] = tile
-			player.rack.remove_letter(tile.letter)
+			player.rack.remove(tile)
 		self.refill_racks()
 		if not player.rack:
 			self.end_game()
 
-		score = self.score_word(new_locs)
+		print(self.board)
+		print("Score:", score)
 		player.score += score
 
 		self.change_turn()
@@ -194,8 +209,6 @@ class Scrabble(object):
 
 	def test_move(self, move):
 		return self.board.check_move_score(move)
-
-	
 
 
 def NotEnoughTilesError(GameError):
@@ -224,7 +237,7 @@ class Bag(object):
 		"""Given a list of tiles to swap, gets the same number of tiles from the bag"""
 		
 		if len(self) < 7:
-			raise NotEnoughTilesError
+			return tiles_to_swap
 
 		new_tiles = self.pull_tiles(len(tiles_to_swap))
 		self.tiles.extend(tiles_to_swap)

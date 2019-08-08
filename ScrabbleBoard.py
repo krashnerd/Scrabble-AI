@@ -102,11 +102,10 @@ class Board:
         except AttributeError:
             return 
 
-
     def score_word(self, new_tile_locs_preprocess):
         for r, c in new_tile_locs_preprocess:
             assert self[r, c].occupied
-        orig = self.grid[:]
+        orig = [row[:] for row in self.grid]
 
         rows, cols = zip(*new_tile_locs_preprocess)
 
@@ -205,7 +204,8 @@ class Board:
 
         # -------- Return the score of each word with length > 1 ---------
 
-        all_word_locs = filter(lambda x:len(x) > 1, all_word_locs)
+        all_word_locs = list(filter(lambda x:len(x) > 1, all_word_locs))
+        print("word_locs", all_word_locs)
         all_words = ["".join([self[loc].get_letter() for loc in word_locs]) for word_locs in all_word_locs]
 
         for word in all_words:
@@ -228,12 +228,15 @@ class Board:
             if self[loc].occupied:
                 raise OccupiedSpaceError("Board:\n{}\nMove:{}".format(str(self), loc))
             self[loc] = tile
-
-        score = self.score_word(locs)
+        try:
+            score = self.score_word(locs)
+        except InvalidMoveError:
+            for loc in locs:
+                self[loc] = None
+            raise
 
         for loc in locs:
             self[loc] = None
-
         return score
 
 class Board_Space(object):
@@ -277,6 +280,8 @@ class Board_Space(object):
 
         if self.loc == (7,7):
             self.printedBonusType = " * "
+
+
     def place_tile_on_space(self, tile):
         if tile is None:
             self.pick_up_tile()

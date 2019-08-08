@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import N, S, E, W, NE, NW, SE, SW
 import Scrabble, utils
+from ScrabbleBoard import InvalidMoveError
 
 tile_size = 40
 tile_center = (tile_size//2, tile_size//2)
@@ -37,45 +38,69 @@ class Display():
 
         self.rack = DisplayRack(self, self.game)
 
-        
-
-        
-
-
-        
-        
-        
-
-        
-
         # self.board.grid(padx=5, pady=5, rowspan = 15, columnspan = 15, sticky = NW)
 
+        self.sync_gui()
 
-        
-
-        self.rack.refill_rack()
-
+        buttons = tk.Frame(self.win, height = 10, width = 600)
+        buttons.grid(column = 0, pady = 5, columnspan = 20)
 
 
-        closebutton = tk.Button(self.win, text="close", width=10, command=self.win.destroy)
-        closebutton.grid(column = 0, columnspan = 3, sticky = S + W)
-        playbutton = tk.Button(self.win, text = "play", width = 0, command = self.submit_move)
-        playbutton.grid(column = 3, rowspan = 2, columnspan = 2, sticky = S)
+
+        closebutton = tk.Button(buttons, text="close", width=10, command=self.win.destroy)
+        playbutton = tk.Button(buttons, text = "play", width = 10, command = self.submit_move)
+        clearbutton = tk.Button(buttons, text = "clear", width = 10, command = self.sync_gui)
+        swapbutton = tk.Button(buttons, text = "swap", width = 10, command = self.submit_swap)
+
+        button_lst = closebutton, playbutton, clearbutton, swapbutton
+
+        for i, button in enumerate(button_lst):
+            button.grid(sticky = E, column = 3 * i, row = 0, columnspan = 2, padx = 3)
         self.win.bind('q', self.destroy)
 
+        self.scoreboard = tk.Frame(self.win, width = 40, height = 80 * len(game.players))
+        self.scoreboard.grid(column = 16, padx = 5, rowspan = 2 * len(game.players))
+
+    def show_scores(self):
+        for label in self.scoreboard.grid_slaves():
+            label.destroy()
+        for i, player in enumerate(game.players):
+            tk.Label(self.scoreboard, height = 40, width = 40, text = str(player.score), font =("Arial", 24)).grid(rowspan = 2, row = 2 + i * 3, pady = 5)
 
     def destroy(self, event):
         self.win.destroy()
 
-    
+    def submit_swap(self):
+        move = self.board.current_move.keys()
+        self.game.apply_move(move)
+        self.sync_gui()
+
+    def sync_gui(self):
+        self.rack.refill_rack()
+        self.board.clear_move()
+        self.show_scores()
 
     def submit_move(self):
         move = self.board.current_move.items()
+        if not move:
+            return
         validated_move = list(filter(utils.validate_placement, move))
-        self.game.apply_move(validated_move)
-        placed_tiles = [self.tiles[tile] for tile, _ in validated_move]
-        for tile in placed_tiles:
-            tile.bind(leftclick, lambda event:None)
+        try:
+            self.game.apply_move(validated_move)
+        except TypeError:
+            print(validated_move)
+            raise
+        except InvalidMoveError:
+            pass
+        else:
+            placed_tiles = [self.tiles[tile] for tile, _ in validated_move]
+
+            for tile in placed_tiles:
+                tile.placed = True
+
+        # Reset the move list
+
+        self.sync_gui()
         
     def place_tile(tile, location):
         """ Move a tile to a given location"""
@@ -106,13 +131,14 @@ class DisplayRack():
         pass
 
     def refill_rack(self):
+        for tile in self.tiles:
+            if not tile.placed:
+                tile.grid_forget()
         self.tiles = [self.tile_lookup.get(tile) for tile in self.game.current_player.rack]
         self.render()
-            
     def render(self):
         for ind, tile in enumerate(self):
             tile.grid(row = 16, column = 2 + ind, pady = 20)
-        self.display.clear_move()
 
 
 
@@ -122,7 +148,7 @@ class DisplayTile(tk.Canvas):
         self.display = display
         self.win = self.display.win
         self.game_tile = game_tile
-
+        self.placed = False
         self.letter = game_tile.letter
         self.points = game_tile.points
 
@@ -135,7 +161,8 @@ class DisplayTile(tk.Canvas):
         self.bind(leftclick, self.handle_click)
 
     def handle_click(self, event):
-        self.focus_set()
+        if not self.placed:
+            self.focus_set()
 
     def __eq__(self, other):
         return ((isinstance(other, DisplayTile) and self.game_tile == other.game_tile) or
@@ -172,7 +199,8 @@ class DisplayBoard():
 
     def handle_click(self, r, c):
         """ Handle click on the square at (r, c)"""
-        if self.game_board[r,c].occupied:
+        current_move_locs = (loc for _, loc in self.current_move.items())
+        if (r, c) in current_move_locs or self.game_board[r,c].occupied:
             return
 
         tile = self.master.focus_get()
