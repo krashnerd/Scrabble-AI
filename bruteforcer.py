@@ -126,7 +126,7 @@ def get_all_row(game, row, tiles):
     endpoint_pairs = word_endpoints(game, row, row_regexes, tiles)
     board = game.board
 
-    def search_moves_rec(col, min_end, _dict = game.dictionary, tiles_left = tiles[:], word = "", move = []):
+    def search_moves_rec(col, min_end, _dict = game.dictionary, tiles_left = tiles[:], word = "", move = set()):
         """Backtracking search from a start point."""
          
         # Base case 1: End of column
@@ -156,7 +156,9 @@ def get_all_row(game, row, tiles):
             if letter in _dict and row_regexes[col].match(letter):
                 
                 new_tiles_left = [x for x in tiles_left if x is not tile]
-                new_move = move + [(tile, board[loc].loc)]
+
+                # Gets the location of the board_space object at the coordinates in case the board has been transposed.
+                new_move = move | {(tile, board[loc].loc)}
                 for recursive_move in (search_moves_rec(col + 1, min_end, _dict[letter], new_tiles_left, word + letter, new_move)):
                     yield recursive_move
 
@@ -187,7 +189,6 @@ def all_moves(game):
     orig = game.board.grid[:]
     transposed = utils.grid_transpose(orig)
     moves = []
-    vertical = False
     for direction in ("horizontal", "vertical"):
         for row in range(15):
             for move in get_all_row(game, row, game.current_player.rack):

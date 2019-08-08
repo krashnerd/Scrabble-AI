@@ -2,7 +2,8 @@ import json, string, copy
 import build_dictionary, consts
 
 from numpy import random
-from Board import Board
+from Board import Board, InvalidMoveError
+from Tile import Tile
 from collections import OrderedDict
 
 class GameError(Exception):
@@ -163,9 +164,14 @@ class Scrabble(object):
 			raise GameOverError
 		new_locs = [loc for _, loc in move]
 
+		try:
+			score = self.board.check_move_score(move)
+		except InvalidMoveError:
+			raise
+			return
+
 		# If every player passes their turn, end the game.
 		self.consecutive_passes = 0 if move else self.consecutive_passes + 1
-
 		if self.consecutive_passes >= len(self.players):
 			self.end_game()
 			return
@@ -230,18 +236,6 @@ class Bag(object):
 	def __iter__(self):
 		for tile in self.tiles:
 			yield tile
-
-class Tile(object):
-	def __init__(self, letter, points = None, tile_id = None):
-		self.letter = letter
-		self.tile_id = tile_id
-		self.points = points if points is not None else consts.points[letter]
-
-	def __hash__(self):
-		return hash((self.letter, self.tile_id))
-
-	def __repr__(self):
-		return self.letter
 
 	
 def gui_test():

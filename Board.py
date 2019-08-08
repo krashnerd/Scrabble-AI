@@ -1,5 +1,5 @@
+from Tile import Tile
 import utils
-
 class OccupiedSpaceError(Exception):
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
@@ -7,6 +7,12 @@ class OccupiedSpaceError(Exception):
 class NegativeIndexError(IndexError):
     def __init__(self,*args,**kwargs):
         IndexError.__init__(self,*args,**kwargs)
+
+class InvalidMoveError(Exception):
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
+
+
 
 class Board:
 
@@ -57,10 +63,12 @@ class Board:
         if ind != self[ind].loc:
             print("Given: {} which is index of tile at {}".format(ind, self[ind].loc))
         assert ind == self[ind].loc
-        if tile:
+        if isinstance(tile, Tile):
             self.place_tile_on_board(tile, ind)
-        else:
+        elif tile is None:
             self[ind].pick_up_tile()
+        else:
+            raise TypeError("Expected Tile instance or None, got {}".format(type(tile)))
 
     def __repr__(self):
         result = ""
@@ -106,7 +114,10 @@ class Board:
         if len(set(rows)) == 1:
             new_tile_locs = new_tile_locs_preprocess
         else:
-            assert len(set(cols)) == 1
+
+            if len(set(cols)) != 1:
+                raise InvalidMoveError
+
             self.transpose()
             new_tile_locs = [(a, b) for b, a in new_tile_locs_preprocess]
 
@@ -160,10 +171,12 @@ class Board:
         end = c
 
 
-        # --------- Get list of coordinates for each new word -----------
-        main_word = [(r, curr_c) for curr_c in range(begin, end)]
 
-        all_words = [main_word]
+
+
+        # --------- Get list of coordinates for each new word -----------
+
+        all_word_locs = [[(r, curr_c) for curr_c in range(begin, end)]]
         for r, c in new_tile_locs:
             letter = self[r, c].get_letter()
 
@@ -174,11 +187,9 @@ class Board:
                     letter = self[r, c].get_letter()
                 except IndexError:
                     letter = None
-
                 
             r += 1
             letter = self[r, c].get_letter()
-
             curr_word_locs = list()
 
             while r < 15 and letter is not None:
@@ -188,14 +199,19 @@ class Board:
                     letter = self[r, c].get_letter()
                 except IndexError:
                     break
-                
 
-            all_words.append(curr_word_locs)
-
-
+            all_word_locs.append(curr_word_locs)
 
         # -------- Return the score of each word with length > 1 ---------
-        base_score = sum([score_single_word(word) for word in all_words if len(word) > 1])
+
+        all_word_locs = filter(lambda x:len(x) > 1, all_word_locs)
+        all_words = ["".join([self[loc].get_letter() for loc in word_locs]) for word_locs in all_word_locs]
+
+        for word in all_words:
+            if not self.game.check_word(word):
+                raise InvalidMoveError
+
+        base_score = sum([score_single_word(word) for word in all_word_locs if len(word) > 1])
         bonus_score = 50 if len(new_tile_locs) == 7 else 0
         self.grid = orig
         return base_score + bonus_score
@@ -218,11 +234,6 @@ class Board:
             self[loc] = None
 
         return score
-
-
-
-
-
 
 class Board_Space(object):
 

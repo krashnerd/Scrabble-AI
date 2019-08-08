@@ -22,3 +22,20 @@ def count(iter):
         return len(iter)
     except TypeError:
         return sum(1 for _ in iter)
+
+
+
+def validate_placement(single_placement):
+    tile, loc = single_placement
+    try:
+        x, y = loc
+
+       
+        
+
+    except TypeError:
+        return False
+
+    else:
+         # Note: Sacrificing slight runtime efficiency for readability.
+        return x in range(15) and y in range(15)
