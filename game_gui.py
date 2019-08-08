@@ -134,8 +134,6 @@ class DisplayTile(tk.Canvas):
 
         self.bind(leftclick, self.handle_click)
 
-
-
     def handle_click(self, event):
         self.focus_set()
 

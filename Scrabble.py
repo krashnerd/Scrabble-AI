@@ -1,5 +1,5 @@
 import json, string, copy
-import build_dictionary, consts
+import consts
 
 from numpy import random
 from Board import Board, InvalidMoveError
@@ -79,7 +79,8 @@ class Scrabble(object):
 		self.players = [InternalPlayer() for _ in range(num_players)]
 		self.bag = Bag()
 		self.board = Board()
-		self.dictionary = build_dictionary.get_dictionary("dictionary/dict.bytesIO")
+		self.dictionary = consts.dictionary
+		
 		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
 		self.bingo_count = 0
 		self.refill_racks()

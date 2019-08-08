@@ -1,5 +1,5 @@
 from Tile import Tile
-import utils
+import utils, consts
 class OccupiedSpaceError(Exception):
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
