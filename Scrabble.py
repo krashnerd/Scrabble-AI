@@ -2,9 +2,8 @@ import json, string, copy
 import consts
 
 from numpy import random
-from Board import Board, InvalidMoveError
-from Tile import Tile
-from collections import OrderedDict
+from ScrabbleBoard import Board, InvalidMoveError
+from ScrabbleTile import Tile
 
 class GameError(Exception):
 	def __init__(self, *args, **kwargs):
@@ -80,7 +79,7 @@ class Scrabble(object):
 		self.bag = Bag()
 		self.board = Board()
 		self.dictionary = consts.dictionary
-		
+
 		self.check_word = lambda word:build_dictionary.check_word(word, self.dictionary)
 		self.bingo_count = 0
 		self.refill_racks()

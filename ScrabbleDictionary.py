@@ -9,3 +9,5 @@ class Scrabble_Dictionary():
 		if not isinstance(word, str):
 			raise TypeError("Expected type str, got {}".format(type(word)))
 		return check_word(word, self.dictionary)
+
+dictionary = ScrabbleDictionary()

@@ -1,4 +1,4 @@
-from Tile import Tile
+from ScrabbleTile import Tile
 import utils, consts
 class OccupiedSpaceError(Exception):
     def __init__(self,*args,**kwargs):
