@@ -1,4 +1,5 @@
 import Scrabble, bruteforcer, utils
+from ScrabbleTile import Tile
 import unittest
 from string import ascii_uppercase
 
@@ -50,7 +51,7 @@ def cramp_game():
 class ScoringTester(unittest.TestCase):
 	def set_current_rack(self, game, letters):
 		game.current_player.rack.clear()
-		game.current_player.rack.extend([Scrabble.Tile(x) for x in letters])
+		game.current_player.rack.extend([Tile(x) for x in letters])
 
 	def test_basic_row(self):
 		letter_placements = blank_board[:]

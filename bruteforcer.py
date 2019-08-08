@@ -48,7 +48,7 @@ def get_tile_regex(coords, game, verbose = False):
     possible = ""
     for letter in string.ascii_uppercase:
         word = chunk.replace("?", letter)
-        if game.check_word(word):
+        if word in dictionary:
             possible += letter
 
     return re.compile("[m{}]".format(possible))
@@ -127,7 +127,7 @@ def get_all_row(game, row, tiles):
     endpoint_pairs = word_endpoints(game, row, row_regexes, tiles)
     board = game.board
 
-    def search_moves_rec(col, min_end, _dict = game.dictionary, tiles_left = tiles[:], word = "", move = set()):
+    def search_moves_rec(col, min_end, _dict = dictionary.starting_node, tiles_left = tiles[:], word = "", move = set()):
         """Backtracking search from a start point."""
          
         # Base case 1: End of column
@@ -177,7 +177,7 @@ def make_dataset():
             game = Scrabble()
             for hand in range(12):
                 hand = game.return_hand()
-                best_words = brute_force(game.dictionary, hand)
+                best_words = brute_force(dictionary.starting_node, hand)
                 best_words.append([])
                 csvwriter.writerow([''.join(sorted([tile.letter for tile in hand])), str(score_firstword(best_words[0]))])
         #print([''.join([tile.letter for tile in hand]),str(score_firstword(best_words[0]))])

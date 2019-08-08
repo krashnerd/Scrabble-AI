@@ -8,6 +8,6 @@ class ScrabbleDictionary():
 
 		if not isinstance(word, str):
 			raise TypeError("Expected type str, got {}".format(type(word)))
-		return check_word(word, self.dictionary)
+		return check_word(word, self.starting_node)
 
 dictionary = ScrabbleDictionary()
