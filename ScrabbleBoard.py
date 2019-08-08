@@ -1,19 +1,7 @@
 from ScrabbleTile import Tile
 from ScrabbleDictionary import dictionary
 import utils, consts
-class OccupiedSpaceError(Exception):
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
-
-class NegativeIndexError(IndexError):
-    def __init__(self,*args,**kwargs):
-        IndexError.__init__(self,*args,**kwargs)
-
-class InvalidMoveError(Exception):
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
-
-
+from exceptions import *
 
 class Board:
 
@@ -205,7 +193,6 @@ class Board:
         # -------- Return the score of each word with length > 1 ---------
 
         all_word_locs = list(filter(lambda x:len(x) > 1, all_word_locs))
-        print("word_locs", all_word_locs)
         all_words = ["".join([self[loc].get_letter() for loc in word_locs]) for word_locs in all_word_locs]
 
         for word in all_words:
@@ -219,6 +206,8 @@ class Board:
 
 
     def check_move_score(self, move):
+        if not move:
+            raise EmptyMoveError
         try:
             locs = [loc for _, loc in move]
         except ValueError:

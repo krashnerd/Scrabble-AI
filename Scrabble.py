@@ -6,22 +6,7 @@ from numpy import random
 from ScrabbleBoard import Board, InvalidMoveError
 from ScrabbleTile import Tile
 from ScrabbleDictionary import dictionary
-
-class GameError(Exception):
-	def __init__(self, *args, **kwargs):
-		Exception.__init__(self, *args, **kwargs)
-
-class GameOverError(GameError):
-
-	def __init__(self, *args, **kwargs):
-		GameError.__init__(self, *args, **kwargs)
-		self.message = "Attempted play on a completed game"
-
-class TileNotFoundError(GameError):
-	def __init__(self, *args, **kwargs):
-		Exception.__init__(self, *args, **kwargs)
-		self.expression = expression
-		self.message = "Tile not found in player rack"
+from exceptions import *
 
 # class Move():
 # 	def __init__(self, start_loc, end_loc, word):
@@ -167,7 +152,6 @@ class Scrabble(object):
 
 		try:
 			new_locs = [loc for _, loc in move]
-
 		except TypeError:
 			player.rack.extend(self.bag.swap_tiles(move))
 			
@@ -175,23 +159,26 @@ class Scrabble(object):
 				player.rack.remove(tile)
 
 			score = 0
+			self.change_turn()
 			return
 
-		else:
-			try:
-				score = self.board.check_move_score(move)
 
-			except InvalidMoveError:
-				raise
+		try:
+			score = self.board.check_move_score(move)
 
-			if len(move) == 7:
-				self.bingo_count += 1
+		except EmptyMoveError:
+			self.change_turn()
+			return
+			
 
-			# If every player passes their turn, end the game.
-			self.consecutive_passes = 0 if move else self.consecutive_passes + 1
-			if self.consecutive_passes >= len(self.players):
-				self.end_game()
-				return
+		if len(move) == 7:
+			self.bingo_count += 1
+
+		# If every player passes their turn, end the game.
+		self.consecutive_passes = 0 if move else self.consecutive_passes + 1
+		if self.consecutive_passes >= len(self.players):
+			self.end_game()
+			return
 		
 		for tile, loc in move:
 			self.board[loc] = tile
@@ -200,8 +187,6 @@ class Scrabble(object):
 		if not player.rack:
 			self.end_game()
 
-		print(self.board)
-		print("Score:", score)
 		player.score += score
 
 		self.change_turn()

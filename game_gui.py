@@ -37,35 +37,40 @@ class Display():
         self.tiles = {tile: DisplayTile(self, tile) for tile in game.bag.all_tiles}
 
         self.rack = DisplayRack(self, self.game)
+      
 
-        # self.board.grid(padx=5, pady=5, rowspan = 15, columnspan = 15, sticky = NW)
-
-        self.sync_gui()
-
-        buttons = tk.Frame(self.win, height = 10, width = 600)
-        buttons.grid(column = 0, pady = 5, columnspan = 20)
+        self.buttons = tk.Frame(self.win, height = 10, width = 600)
+        self.buttons.grid(column = 0, pady = 5, columnspan = 15)
 
 
 
-        closebutton = tk.Button(buttons, text="close", width=10, command=self.win.destroy)
-        playbutton = tk.Button(buttons, text = "play", width = 10, command = self.submit_move)
-        clearbutton = tk.Button(buttons, text = "clear", width = 10, command = self.sync_gui)
-        swapbutton = tk.Button(buttons, text = "swap", width = 10, command = self.submit_swap)
+        closebutton = tk.Button(self.buttons, text="close", width=10, command=self.win.destroy)
+        playbutton = tk.Button(self.buttons, text = "play", width = 10, command = self.submit_move)
+        clearbutton = tk.Button(self.buttons, text = "clear", width = 10, command = self.sync_gui)
+        swapbutton = tk.Button(self.buttons, text = "swap", width = 10, command = self.submit_swap)
 
-        button_lst = closebutton, playbutton, clearbutton, swapbutton
+        button_lst = [closebutton, playbutton, clearbutton, swapbutton]
 
         for i, button in enumerate(button_lst):
             button.grid(sticky = E, column = 3 * i, row = 0, columnspan = 2, padx = 3)
         self.win.bind('q', self.destroy)
 
-        self.scoreboard = tk.Frame(self.win, width = 40, height = 80 * len(game.players))
-        self.scoreboard.grid(column = 16, padx = 5, rowspan = 2 * len(game.players))
+        self.scoreboard = tk.Frame(self.win, width = 2, height = 2)
+        self.scoreboard.grid(row = 1, column = 20, rowspan = 4, padx = 5)
+
+
+
+        self.make_score_labels()
+        self.sync_gui()
 
     def show_scores(self):
-        for label in self.scoreboard.grid_slaves():
-            label.destroy()
-        for i, player in enumerate(game.players):
-            tk.Label(self.scoreboard, height = 40, width = 40, text = str(player.score), font =("Arial", 24)).grid(rowspan = 2, row = 2 + i * 3, pady = 5)
+        self.score_label.destroy()
+        self.make_score_labels()
+        self.score_label.grid()
+
+    
+    def make_score_labels(self):
+        self.score_label = tk.Label(self.scoreboard, height = 0, text = "\n".join(str(player.score) for player in self.game.players), font =("Arial", 50))
 
     def destroy(self, event):
         self.win.destroy()
@@ -77,8 +82,9 @@ class Display():
 
     def sync_gui(self):
         self.rack.refill_rack()
-        self.board.clear_move()
         self.show_scores()
+        self.board.clear_move()
+        
 
     def submit_move(self):
         move = self.board.current_move.items()
