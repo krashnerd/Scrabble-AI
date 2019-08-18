@@ -123,6 +123,7 @@ def word_endpoints(game, row_ind, restrictions_list, tiles = None, verbose = Fal
 
 def get_all_row(game, row, tiles):
     """Get all possible moves with a given row and set of letters"""
+    using_transpose = game.board.is_transposed
     row_regexes = make_regexes(game, row)
     endpoint_pairs = word_endpoints(game, row, row_regexes, tiles)
     board = game.board
@@ -169,6 +170,7 @@ def get_all_row(game, row, tiles):
                 for i in loc:
                     assert 0 <= i < 15
             yield move
+            game.board.transpose(using_transpose)
 
 def make_dataset():
     with open('starting_hands_training_data.csv', 'w') as csvfile:
@@ -180,24 +182,21 @@ def make_dataset():
                 best_words = brute_force(dictionary.starting_node, hand)
                 best_words.append([])
                 csvwriter.writerow([''.join(sorted([tile.letter for tile in hand])), str(score_firstword(best_words[0]))])
-        #print([''.join([tile.letter for tile in hand]),str(score_firstword(best_words[0]))])
-            # print(best_words)
-            #for word in best_words:
-            
-    # print("Best words: %s - %d points." % (", ".join([tile.letter for best_word in best_words for tile in best_word]), score_firstword(best_word)))
-
+        
 def all_moves(game):
-    orig = game.board.grid[:]
-    transposed = utils.grid_transpose(orig)
     moves = []
     for direction in ("horizontal", "vertical"):
         for row in range(15):
+            if direction == "vertical":
+                game.board.transpose()
+
             for move in get_all_row(game, row, game.current_player.rack):
-                game.board.grid = orig
+                game.board.untranspose()
                 yield move
+                
                 if direction == "vertical":
-                    game.board.grid = transposed
-        game.board.transpose()
+                    game.board.transpose()
+    game.board.untranspose()
 
 def highest_scoring_move(game):
     

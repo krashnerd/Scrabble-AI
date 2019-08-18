@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import N, S, E, W, NE, NW, SE, SW
 import Scrabble, utils
 from ScrabbleBoard import InvalidMoveError
+import ScrabbleTile
+from players import GreedyPlayer
 
 tile_size = 40
 tile_center = (tile_size//2, tile_size//2)
@@ -10,6 +12,8 @@ board_size = 15 * tile_size
 mini_square = [(0,0),(0,1),(1,1),(1,0)]
 
 leftclick = '<Button-1>'
+
+human = "human"
 
 # class PlayButton(tk.Button):
 #     def __init__(self, display, game):
@@ -23,10 +27,14 @@ leftclick = '<Button-1>'
 #     self.make_move()
 
 class Display():
-    def __init__(self, win, game = None):
+    def __init__(self, win, players = [human, GreedyPlayer()]):
+
         self.win = win
 
-        self.game = game or Scrabble.Scrabble()
+        self.players = players
+        self.current_player_index = 0
+
+        self.game = Scrabble.Scrabble(len(self.players))
         game = self.game
         self.win.geometry('1000x900+2000+50')
 
@@ -42,14 +50,12 @@ class Display():
         self.buttons = tk.Frame(self.win, height = 10, width = 600)
         self.buttons.grid(column = 0, pady = 5, columnspan = 15)
 
-
-
-        closebutton = tk.Button(self.buttons, text="close", width=10, command=self.win.destroy)
+        cheatbutton = tk.Button(self.buttons, text="cheat", width=10, command=self.cheat)
         playbutton = tk.Button(self.buttons, text = "play", width = 10, command = self.submit_move)
         clearbutton = tk.Button(self.buttons, text = "clear", width = 10, command = self.sync_gui)
         swapbutton = tk.Button(self.buttons, text = "swap", width = 10, command = self.submit_swap)
 
-        button_lst = [closebutton, playbutton, clearbutton, swapbutton]
+        button_lst = [cheatbutton, playbutton, clearbutton, swapbutton]
 
         for i, button in enumerate(button_lst):
             button.grid(sticky = E, column = 3 * i, row = 0, columnspan = 2, padx = 3)
@@ -68,41 +74,83 @@ class Display():
         self.make_score_labels()
         self.score_label.grid()
 
+    def cheat(self):
+        self.sync_gui()
+        best_move = GreedyPlayer().get_move(self.game)
+        print(best_move)
+        for game_tile, loc in best_move:
+            r, c = loc
+
+            self.board.current_move[game_tile] = loc
+
+            tile = self.tiles[game_tile]
+            tile.grid(row = r, column = c, pady = 0)
+            
+
+    def increment_player(self):
+        self.current_player_index += 1
+        self.current_player_index %= len(self.players)
+        self.current_player = self.players[self.current_player_index]
+
+
     
     def make_score_labels(self):
-        self.score_label = tk.Label(self.scoreboard, height = 0, text = "\n".join(str(player.score) for player in self.game.players), font =("Arial", 50))
+        scoreboard_text = "\n".join(str(player.score) for player in self.game.players)
+        self.score_label = tk.Label(self.scoreboard, height = 0, text = scoreboard_text, font =("Arial", 50))
 
     def destroy(self, event):
         self.win.destroy()
 
     def submit_swap(self):
         move = self.board.current_move.keys()
-        self.game.apply_move(move)
-        self.sync_gui()
+        self.submit_move(move)
 
     def sync_gui(self):
+        for r in range(15):
+            for c in range(15):
+                space = self.game.board[r, c]
+                if space.occupied:
+                    self.tiles[space.tile].grid(row = r, column = c, pady = 0)
+
         self.rack.refill_rack()
         self.show_scores()
         self.board.clear_move()
         
 
-    def submit_move(self):
-        move = self.board.current_move.items()
+    def submit_move(self, move = None):
+        move = move or self.board.current_move.items()
         if not move:
             return
-        validated_move = list(filter(utils.validate_placement, move))
+
+        non_swaps = [x for x in move if not isinstance(x, ScrabbleTile.Tile)]
+
+        if non_swaps:
+            validated_move = list(filter(utils.validate_placement, move))
+        else:
+            validated_move = move
+
         try:
             self.game.apply_move(validated_move)
         except TypeError:
-            print(validated_move)
+            print("Erroneous move:", validated_move)
             raise
         except InvalidMoveError:
             pass
         else:
-            placed_tiles = [self.tiles[tile] for tile, _ in validated_move]
+            """If valid move, change current player and go"""
+
+            placed_tiles = [self.tiles[tile] for tile, _ in validated_move] if non_swaps else validated_move
 
             for tile in placed_tiles:
                 tile.placed = True
+
+            self.increment_player()
+            if self.current_player is not human:
+                move = self.current_player.get_move(game = self.game)
+                self.submit_move(move)
+
+
+
 
         # Reset the move list
 
@@ -217,6 +265,7 @@ class DisplayBoard():
 
         tile.grid(row = r, column = c, pady = 0)
         self.master.focus_set()
+
     def create_board(self):
         bonus_color_lookup = {
                     'L2':'Cyan',

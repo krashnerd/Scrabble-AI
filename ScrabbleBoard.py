@@ -7,6 +7,7 @@ class Board:
 
     """docstring for S_Board"""
     def __init__(self):
+        self.is_transposed = False
         _TWS = [(x,y) for x in [0,7,14] for y in [0,7,14]]
         _TWS.remove((7,7))
         _DWS = [(7 + dx*ffset,7+dy*ffset) for ffset in range(3,7) for dx in [-1,1] for dy in [-1,1]] 
@@ -76,8 +77,14 @@ class Board:
                 result += ("|%s|\n" % "|".join(map(printedRowFn, row)))
         return result
 
-    def transpose(self):
-        self.grid = utils.grid_transpose(self.grid)
+    def transpose(self, which = None):
+        if which != self.is_transposed:
+            self.is_transposed = not self.is_transposed
+            self.grid = utils.grid_transpose(self.grid)
+
+    def untranspose(self):
+        if self.is_transposed:
+            self.transpose()
 
     def get(self, r,c = None):
         if c == None:
@@ -91,9 +98,9 @@ class Board:
             return 
 
     def score_word(self, new_tile_locs_preprocess):
+        assert not self.is_transposed
         for r, c in new_tile_locs_preprocess:
             assert self[r, c].occupied
-        orig = [row[:] for row in self.grid]
 
         rows, cols = zip(*new_tile_locs_preprocess)
 
@@ -102,8 +109,8 @@ class Board:
         if len(set(rows)) == 1:
             new_tile_locs = new_tile_locs_preprocess
         else:
-
             if len(set(cols)) != 1:
+               
                 raise InvalidMoveError
 
             self.transpose()
@@ -190,22 +197,34 @@ class Board:
 
             all_word_locs.append(curr_word_locs)
 
+        
+
         # -------- Return the score of each word with length > 1 ---------
+
+        
 
         all_word_locs = list(filter(lambda x:len(x) > 1, all_word_locs))
         all_words = ["".join([self[loc].get_letter() for loc in word_locs]) for word_locs in all_word_locs]
 
-        for word in all_words:
-            if word not in dictionary:
-                raise InvalidMoveError
+        
 
         base_score = sum([score_single_word(word) for word in all_word_locs if len(word) > 1])
+
+        self.untranspose()
+
+        for word in all_words:
+            if word not in dictionary:
+                print("{} is not a word".format(word))
+                raise InvalidMoveError
+
         bonus_score = 50 if len(new_tile_locs) == 7 else 0
-        self.grid = orig
         return base_score + bonus_score
 
 
     def check_move_score(self, move):
+        assert not self.is_transposed
+        for _, loc in move:
+            assert self[loc].loc == loc
         if not move:
             raise EmptyMoveError
         try:

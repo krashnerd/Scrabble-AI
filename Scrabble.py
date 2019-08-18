@@ -145,6 +145,7 @@ class Scrabble(object):
 
 
 	def apply_move(self, move):
+		assert not self.board.is_transposed
 		player = self.current_player
 
 		if self.winner is not None:
