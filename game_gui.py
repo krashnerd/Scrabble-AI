@@ -1,3 +1,12 @@
+"""
+Author: Krishna Kahn
+
+GUI wrapper
+
+
+
+"""
+
 import tkinter as tk
 from tkinter import N, S, E, W, NE, NW, SE, SW
 import Scrabble, utils
@@ -15,18 +24,8 @@ leftclick = '<Button-1>'
 
 human = "human"
 
-# class PlayButton(tk.Button):
-#     def __init__(self, display, game):
-#         self.display = display
-#         self.win = self.display.win
-
-
-
-#         super().__init__(self.win, command = )
-
-#     self.make_move()
-
 class Display():
+    """ Main display window for Scrabble game """
     def __init__(self, win, players = [human, GreedyPlayer()]):
 
         self.win = win
@@ -75,6 +74,7 @@ class Display():
         self.score_label.grid()
 
     def cheat(self):
+        """ Show the highest scoring move """
         self.sync_gui()
         best_move = GreedyPlayer().get_move(self.game)
         print(best_move)
@@ -88,6 +88,7 @@ class Display():
             
 
     def increment_player(self):
+        """ Change turns """
         self.current_player_index += 1
         self.current_player_index %= len(self.players)
         self.current_player = self.players[self.current_player_index]
@@ -95,6 +96,7 @@ class Display():
 
     
     def make_score_labels(self):
+        """ SCoreboard update helper """
         scoreboard_text = "\n".join(str(player.score) for player in self.game.players)
         self.score_label = tk.Label(self.scoreboard, height = 0, text = scoreboard_text, font =("Arial", 50))
 
@@ -102,10 +104,12 @@ class Display():
         self.win.destroy()
 
     def submit_swap(self):
+        """Swapping tiles"""
         move = self.board.current_move.keys()
         self.submit_move(move)
 
     def sync_gui(self):
+        """Synchronize the gui to the current internal state of the game"""
         for r in range(15):
             for c in range(15):
                 space = self.game.board[r, c]
@@ -137,7 +141,7 @@ class Display():
         except InvalidMoveError:
             pass
         else:
-            """If valid move, change current player and go"""
+            #If valid move, change current player and go
 
             placed_tiles = [self.tiles[tile] for tile, _ in validated_move] if non_swaps else validated_move
 

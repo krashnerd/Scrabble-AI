@@ -184,6 +184,7 @@ def make_dataset():
                 csvwriter.writerow([''.join(sorted([tile.letter for tile in hand])), str(score_firstword(best_words[0]))])
         
 def all_moves(game):
+    """ Generator for all moves in the game """
     moves = []
     for direction in ("horizontal", "vertical"):
         for row in range(15):

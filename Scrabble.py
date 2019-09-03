@@ -18,10 +18,14 @@ class Rack(list):
 		super().__init__(items)
 
 	def has_tiles(self, move):
-		for tile, position in move:
-			if tile not in self:
-				return False
-
+		for x in move:
+			if isinstance(x, Tile):
+				tile = x
+			else:
+				tile, _ = x
+			for tile, position in move:
+				if tile not in self:
+					return False
 		return True
 
 	def remove_letter(self, letter):
@@ -59,6 +63,7 @@ class InternalPlayer:
 
 
 class Scrabble(object):
+	""" Scrabble Game """
 	def __init__(self, num_players = 2):
 		self.letter_dist = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1]
 		points = {1:"AEIOULNSTR",2:"DG",3:"BCMP",4:"FHVWY",5:"K",8:"JX",10:"QZ"}
